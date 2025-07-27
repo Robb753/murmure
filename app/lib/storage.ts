@@ -10,11 +10,14 @@ export interface MurmureEntry {
   createdAt: Date;
   updatedAt: Date;
   wordCount: number;
+  deletedAt?: Date;
+  isInTrash?: boolean;
 }
 
 class MurmureStorage {
   private static readonly ENTRIES_KEY = "murmure_entries";
   private static readonly CURRENT_ENTRY_KEY = "murmure_current_entry";
+  public static readonly TRASH_RETENTION_DAYS = 30;
 
   // Créer une nouvelle entrée (inspiré du HumanEntry de Freewrite)
   static createNewEntry(): MurmureEntry {
@@ -32,6 +35,7 @@ class MurmureStorage {
       createdAt: now,
       updatedAt: now,
       wordCount: 0,
+      isInTrash: false,
     };
   }
 
@@ -56,6 +60,8 @@ class MurmureStorage {
           ...entry,
           createdAt: new Date(entry.createdAt),
           updatedAt: new Date(entry.updatedAt),
+          deletedAt: entry.deletedAt ? new Date(entry.deletedAt) : undefined,
+          isInTrash: entry.isInTrash || false,
         }));
       }
       return [];
@@ -63,6 +69,18 @@ class MurmureStorage {
       console.error("❌ Error loading entries:", error);
       return [];
     }
+  }
+
+  // Charger seulement les entrées actives (pas dans la corbeille)
+  static async loadActiveEntries(): Promise<MurmureEntry[]> {
+    const allEntries = await this.loadEntries();
+    return allEntries.filter((entry) => !entry.isInTrash);
+  }
+
+  // Charger seulement les entrées dans la corbeille
+  static async loadTrashEntries(): Promise<MurmureEntry[]> {
+    const allEntries = await this.loadEntries();
+    return allEntries.filter((entry) => entry.isInTrash);
   }
 
   // Sauvegarder une entrée spécifique
@@ -92,17 +110,113 @@ class MurmureStorage {
     }
   }
 
-  // Supprimer une entrée
-  static async deleteEntry(entryId: string): Promise<void> {
+  // Déplacer une entrée vers la corbeille (suppression douce)
+  static async moveToTrash(entryId: string): Promise<void> {
+    try {
+      const entries = await this.loadEntries();
+      const entryIndex = entries.findIndex((e) => e.id === entryId);
+
+      if (entryIndex >= 0) {
+        entries[entryIndex] = {
+          ...entries[entryIndex],
+          isInTrash: true,
+          deletedAt: new Date(),
+        };
+
+        await this.saveEntries(entries);
+        console.log(`🗑️ Entry moved to trash: ${entryId}`);
+      }
+    } catch (error) {
+      console.error("❌ Error moving entry to trash:", error);
+    }
+  }
+
+  // Restaurer une entrée depuis la corbeille
+  static async restoreFromTrash(entryId: string): Promise<void> {
+    try {
+      const entries = await this.loadEntries();
+      const entryIndex = entries.findIndex((e) => e.id === entryId);
+
+      if (entryIndex >= 0) {
+        entries[entryIndex] = {
+          ...entries[entryIndex],
+          isInTrash: false,
+          deletedAt: undefined,
+        };
+
+        await this.saveEntries(entries);
+        console.log(`♻️ Entry restored from trash: ${entryId}`);
+      }
+    } catch (error) {
+      console.error("❌ Error restoring entry from trash:", error);
+    }
+  }
+
+  // Supprimer définitivement une entrée
+  static async deleteEntryPermanently(entryId: string): Promise<void> {
     try {
       const entries = await this.loadEntries();
       const filtered = entries.filter((e) => e.id !== entryId);
       await this.saveEntries(filtered);
-      console.log(`✅ Entry deleted: ${entryId}`);
+      console.log(`💀 Entry permanently deleted: ${entryId}`);
     } catch (error) {
-      console.error("❌ Error deleting entry:", error);
+      console.error("❌ Error permanently deleting entry:", error);
     }
   }
+
+  // Vider la corbeille (suppression définitive de tout)
+  static async emptyTrash(): Promise<void> {
+    try {
+      const entries = await this.loadEntries();
+      const activeEntries = entries.filter((e) => !e.isInTrash);
+      await this.saveEntries(activeEntries);
+      console.log(`🧹 Trash emptied`);
+    } catch (error) {
+      console.error("❌ Error emptying trash:", error);
+    }
+  }
+
+  // Nettoyer automatiquement les entrées de la corbeille après 30 jours
+  static async cleanupExpiredTrashEntries(): Promise<void> {
+    try {
+      const entries = await this.loadEntries();
+      const now = new Date();
+      const retentionMs = this.TRASH_RETENTION_DAYS * 24 * 60 * 60 * 1000;
+
+      let cleanedCount = 0;
+      const filteredEntries = entries.filter((entry) => {
+        if (entry.isInTrash && entry.deletedAt) {
+          const daysSinceDeleted = now.getTime() - entry.deletedAt.getTime();
+          if (daysSinceDeleted > retentionMs) {
+            cleanedCount++;
+            return false; // Supprimer définitivement
+          }
+        }
+        return true; // Garder
+      });
+
+      if (cleanedCount > 0) {
+        await this.saveEntries(filteredEntries);
+        console.log(
+          `🧹 Auto-cleaned ${cleanedCount} expired entries from trash`
+        );
+      }
+    } catch (error) {
+      console.error("❌ Error cleaning up expired trash entries:", error);
+    }
+  }
+
+  // Obtenir le nombre de jours restants avant suppression définitive
+  static getDaysUntilDeletion = (entry: MurmureEntry): number | null => {
+    if (!entry.isInTrash || !entry.deletedAt) return null;
+
+    const now = new Date();
+    const daysSinceDeleted = Math.floor(
+      (now.getTime() - entry.deletedAt.getTime()) / (24 * 60 * 60 * 1000)
+    );
+
+    return Math.max(0, MurmureStorage.TRASH_RETENTION_DAYS - daysSinceDeleted);
+  };
 
   // Sauvegarder l'ID de l'entrée courante
   static async saveCurrentEntryId(entryId: string): Promise<void> {
@@ -142,7 +256,7 @@ class MurmureStorage {
 
   // Obtenir une entrée vide pour aujourd'hui ou créer une nouvelle
   static async getTodayEntryOrCreate(): Promise<MurmureEntry> {
-    const entries = await this.loadEntries();
+    const entries = await this.loadActiveEntries(); // Seulement les entrées actives
     const today = format(new Date(), "MMM d");
 
     // Chercher une entrée vide d'aujourd'hui
@@ -200,22 +314,19 @@ Appuie sur "Commencer à écrire" et laisse-toi aller...`;
 
   // Export des données (pour partage futur)
   static async exportAllEntries(): Promise<string> {
-    const entries = await this.loadEntries();
+    const entries = await this.loadActiveEntries(); // Seulement les entrées actives
     return JSON.stringify(entries, null, 2);
   }
 
-  // Nettoyer les anciennes entrées (optionnel)
-  static async cleanOldEntries(daysToKeep: number = 30): Promise<void> {
-    const entries = await this.loadEntries();
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
+  // Export des données de la corbeille
+  static async exportTrashEntries(): Promise<string> {
+    const entries = await this.loadTrashEntries();
+    return JSON.stringify(entries, null, 2);
+  }
 
-    const filteredEntries = entries.filter(
-      (entry) => entry.createdAt > cutoffDate
-    );
-
-    await this.saveEntries(filteredEntries);
-    console.log(`✅ Cleaned entries older than ${daysToKeep} days`);
+  // Initialiser le nettoyage automatique (à appeler au démarrage)
+  static async initializeAutoCleanup(): Promise<void> {
+    await this.cleanupExpiredTrashEntries();
   }
 }
 

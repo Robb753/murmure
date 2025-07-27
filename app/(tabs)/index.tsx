@@ -11,30 +11,32 @@ import {
   TextInput,
   TouchableOpacity,
   Alert,
-  FlatList,
   Platform,
   SafeAreaView,
   Modal,
+  Animated,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useFocusEffect } from "expo-router";
 import * as Haptics from "expo-haptics";
-import { Menu, Divider, Provider } from "react-native-paper";
+import { Provider } from "react-native-paper";
 
 // Imports des hooks personnalisés
 import { useTimer } from "@/hooks/useTimer";
 import { useStorage } from "@/hooks/useStorage";
 import { useAudio } from "@/hooks/useAudio";
 import { useTheme } from "@/hooks/useTheme";
-import { MurmureEntry } from "../lib/storage";
+
+// Import de la nouvelle sidebar
+import { EnhancedSidebar } from "@/components/EnhancedSidebar";
 
 import {
-  sidebarStyles,
   commonStyles,
   mainPageStyles,
   timerStyles,
   modalStyles,
 } from "@/styles";
+import { PreviewModal } from "@/components/PreviewModal";
 
 // Tailles de police disponibles
 const fontSizes = [16, 20, 24, 28, 32, 36, 40];
@@ -65,168 +67,6 @@ const availableFonts = [
   { name: "Monospace", value: "monospace" },
 ];
 
-// Composant séparé pour une entrée de sidebar
-const SidebarEntry = ({
-  item,
-  currentTheme,
-  currentEntry,
-  loadEntry,
-  shareEntry,
-  deleteEntry,
-}: {
-  item: MurmureEntry;
-  currentTheme: any;
-  currentEntry: MurmureEntry | null;
-  loadEntry: (entry: MurmureEntry) => void;
-  shareEntry: (entry: MurmureEntry) => void;
-  deleteEntry: (entry: MurmureEntry) => void;
-}) => {
-  const isActive = currentEntry?.id === item.id;
-  const isEmpty = item.content.trim().length === 0;
-  const [menuVisible, setMenuVisible] = useState(false);
-
-  const handleLoadEntry = () => {
-    loadEntry(item);
-    setMenuVisible(false);
-  };
-
-  const handleShareEntry = () => {
-    shareEntry(item);
-    setMenuVisible(false);
-  };
-
-  const handleDeleteEntry = () => {
-    deleteEntry(item);
-    setMenuVisible(false);
-  };
-
-  const handleLongPress = () => {
-    if (Platform.OS !== "web") {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    }
-    Alert.alert("Actions", `Session du ${item.date}`, [
-      { text: "Annuler", style: "cancel" },
-      { text: "Charger", onPress: () => loadEntry(item) },
-      { text: "Partager", onPress: () => shareEntry(item) },
-      {
-        text: "Supprimer",
-        style: "destructive",
-        onPress: () => deleteEntry(item),
-      },
-    ]);
-  };
-
-  return (
-    <View style={sidebarStyles.sidebarEntryContainer}>
-      <TouchableOpacity
-        style={[
-          sidebarStyles.sidebarEntry,
-          {
-            backgroundColor: isActive
-              ? currentTheme.accent + "20"
-              : "transparent",
-            borderLeftColor: isActive ? currentTheme.accent : "transparent",
-          },
-        ]}
-        onPress={() => loadEntry(item)}
-        onLongPress={Platform.OS !== "web" ? handleLongPress : undefined}
-      >
-        <Text
-          style={[sidebarStyles.sidebarEntryDate, { color: currentTheme.text }]}
-        >
-          {item.date}
-        </Text>
-        <Text
-          style={[
-            sidebarStyles.sidebarEntryPreview,
-            { color: currentTheme.textSecondary },
-          ]}
-          numberOfLines={2}
-        >
-          {isEmpty ? "Session vide" : item.previewText || "Pas de preview"}
-        </Text>
-        <Text
-          style={[
-            sidebarStyles.sidebarEntryMeta,
-            { color: currentTheme.muted },
-          ]}
-        >
-          {isEmpty
-            ? "0 mot"
-            : `${item.wordCount} mot${item.wordCount > 1 ? "s" : ""}`}
-        </Text>
-      </TouchableOpacity>
-
-      {/* Menu contextuel pour le web */}
-      {Platform.OS === "web" && (
-        <Menu
-          visible={menuVisible}
-          onDismiss={() => setMenuVisible(false)}
-          contentStyle={{
-            backgroundColor: currentTheme.surface,
-            borderRadius: 12,
-            borderWidth: 1,
-            borderColor: currentTheme.border,
-            minWidth: 160,
-            shadowColor: "#000",
-            shadowOffset: {
-              width: 0,
-              height: 4,
-            },
-            shadowOpacity: 0.15,
-            shadowRadius: 12,
-            elevation: 8,
-          }}
-          anchor={
-            <TouchableOpacity
-              onPress={() => setMenuVisible(true)}
-              style={[
-                sidebarStyles.webActionsButtonExternal,
-                {
-                  backgroundColor: currentTheme.surface,
-                  borderColor: currentTheme.border,
-                },
-              ]}
-              activeOpacity={0.6}
-            >
-              <Text
-                style={[
-                  sidebarStyles.webActionsIcon,
-                  { color: currentTheme.textSecondary },
-                ]}
-              >
-                ⋯
-              </Text>
-            </TouchableOpacity>
-          }
-        >
-          <Menu.Item
-            onPress={handleLoadEntry}
-            title="📂 Charger"
-            titleStyle={{ color: currentTheme.text, fontSize: 14 }}
-            style={{ paddingVertical: 8 }}
-          />
-          <Menu.Item
-            onPress={handleShareEntry}
-            title="📤 Partager"
-            titleStyle={{ color: currentTheme.text, fontSize: 14 }}
-            style={{ paddingVertical: 8 }}
-          />
-          <Divider
-            style={{ backgroundColor: currentTheme.border, height: 1 }}
-          />
-          <Menu.Item
-            onPress={handleDeleteEntry}
-            title="🗑️ Supprimer"
-            titleStyle={{ color: "#ef4444", fontSize: 14, fontWeight: "500" }}
-            style={{ paddingVertical: 8 }}
-          />
-        </Menu>
-      )}
-    </View>
-  );
-};
-
 export default function MainPage() {
   // États pour l'interface utilisateur
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -235,15 +75,27 @@ export default function MainPage() {
   const [selectedFontName, setSelectedFontName] = useState("Georgia");
   const [showFontSizeMenu, setShowFontSizeMenu] = useState(false);
 
+  // États pour le mode focus
+  const [focusMode, setFocusMode] = useState(false);
+  const [showFocusControls, setShowFocusControls] = useState(false);
+  const [showFocusHint, setShowFocusHint] = useState(false);
+  const [lastTap, setLastTap] = useState(0);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const focusControlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hintTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   // Références
   const textInputRef = useRef<TextInput>(null);
 
   // Hooks personnalisés
   const { currentTheme, isDarkMode, toggleDarkMode } = useTheme();
   const { loadSounds, playSound, cleanupSounds } = useAudio();
+
+  // ✅ Hook storage mis à jour avec les nouvelles fonctionnalités
   const {
     currentEntry,
     entries,
+    trashEntries,
     text,
     wordCount,
     setText,
@@ -251,8 +103,18 @@ export default function MainPage() {
     saveCurrentEntry,
     createNewSession,
     loadEntry,
-    deleteEntry,
     shareEntry,
+    // Actions corbeille
+    moveEntryToTrash,
+    restoreFromTrash,
+    deleteEntryPermanently,
+    emptyTrash,
+    getDaysUntilDeletion,
+    // Action preview
+    previewEntry,
+    isPreviewModalVisible,
+    openPreview,
+    closePreview,
   } = useStorage();
 
   const {
@@ -265,9 +127,13 @@ export default function MainPage() {
     formatTime,
   } = useTimer({ playSound });
 
-  // Gestion personnalisée de la fin du timer (appelée manuellement)
+  // Gestion personnalisée de la fin du timer
   useEffect(() => {
     if (timeRemaining === 0 && isTimerRunning) {
+      // Sortir du mode focus avant l'alerte
+      setFocusMode(false);
+      focusModeRef.current = false;
+
       // Timer terminé, afficher l'alerte personnalisée
       Alert.alert(
         "Session terminée ✨",
@@ -321,6 +187,96 @@ export default function MainPage() {
     }, [placeholders])
   );
 
+  // Références pour éviter les problèmes de dépendances
+  const focusModeRef = useRef(false);
+  const handleStopTimerRef = useRef<(() => Promise<void>) | null>(null);
+  const showFocusControlsTemporarilyRef = useRef<(() => void) | null>(null);
+
+  // Gestion du mode focus - Fonctions simples sans useCallback
+  const handleStopTimer = async () => {
+    await toggleTimer();
+    setFocusMode(false);
+    focusModeRef.current = false;
+    setShowFocusControls(false);
+    setShowFocusHint(false);
+
+    // Clear timeouts
+    if (focusControlsTimeoutRef.current) {
+      clearTimeout(focusControlsTimeoutRef.current);
+    }
+    if (hintTimeoutRef.current) {
+      clearTimeout(hintTimeoutRef.current);
+    }
+
+    // Animation de sortie
+    Animated.timing(fadeAnim, {
+      toValue: 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const showFocusControlsTemporarily = () => {
+    setShowFocusControls(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    // Clear existing timeout
+    if (focusControlsTimeoutRef.current) {
+      clearTimeout(focusControlsTimeoutRef.current);
+    }
+
+    // Auto-hide après 4 secondes
+    focusControlsTimeoutRef.current = setTimeout(() => {
+      setShowFocusControls(false);
+    }, 4000);
+  };
+
+  // Mettre à jour les refs quand les fonctions changent
+  useEffect(() => {
+    handleStopTimerRef.current = handleStopTimer;
+    showFocusControlsTemporarilyRef.current = showFocusControlsTemporarily;
+  });
+
+  useEffect(() => {
+    focusModeRef.current = focusMode;
+  }, [focusMode]);
+
+  // Gestion des raccourcis clavier pour le mode focus
+  useEffect(() => {
+    if (Platform.OS !== "web") return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Seulement si on est en mode focus
+      if (!focusModeRef.current) {
+        return;
+      }
+
+      // Ctrl/Cmd + Espace pour arrêter
+      if ((e.ctrlKey || e.metaKey) && e.code === "Space") {
+        e.preventDefault();
+        e.stopPropagation();
+        if (handleStopTimerRef.current) {
+          handleStopTimerRef.current();
+        }
+      }
+      // Échap pour révéler les contrôles
+      else if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopPropagation();
+        if (showFocusControlsTemporarilyRef.current) {
+          showFocusControlsTemporarilyRef.current();
+        }
+      }
+    };
+
+    // Écouter sur window avec capture
+    window.addEventListener("keydown", handleKeyDown, true);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown, true);
+    };
+  }, []);
+
   // Gestion des préférences
   const toggleFontSizeMenu = () => {
     setShowFontSizeMenu(!showFontSizeMenu);
@@ -343,31 +299,325 @@ export default function MainPage() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
+  // Gestion du mode focus
   const handleToggleTimer = async () => {
     await toggleTimer();
+
     if (!isTimerRunning) {
+      // Démarrer le timer = entrer en mode focus
+      setFocusMode(true);
+      focusModeRef.current = true;
+      setSidebarOpen(false); // Fermer la sidebar
+      setShowFocusHint(true);
+
+      // Animation d'entrée
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+
+      // Masquer le hint après 3 secondes
+      hintTimeoutRef.current = setTimeout(() => {
+        setShowFocusHint(false);
+      }, 3000);
+
       setTimeout(() => textInputRef.current?.focus(), 100);
+    } else {
+      // Arrêter le timer = sortir du mode focus
+      handleStopTimer();
     }
   };
 
-  // Rendu d'une entrée dans la sidebar
-  const renderSidebarEntry = ({ item }: { item: MurmureEntry }) => {
-    return (
-      <SidebarEntry
-        item={item}
-        currentTheme={currentTheme}
-        currentEntry={currentEntry}
-        loadEntry={loadEntry}
-        shareEntry={shareEntry}
-        deleteEntry={deleteEntry}
-      />
-    );
+  // Gestion du double-tap pour révéler les contrôles
+  const handleFocusDoubleTap = () => {
+    if (!focusMode) return;
+
+    const now = Date.now();
+    if (now - lastTap < 300) {
+      showFocusControlsTemporarily();
+    }
+    setLastTap(now);
   };
 
+  const continueFocusSession = () => {
+    setShowFocusControls(false);
+    if (focusControlsTimeoutRef.current) {
+      clearTimeout(focusControlsTimeoutRef.current);
+    }
+  };
+
+  // Mode Focus - Interface complètement différente
+  if (focusMode) {
+    return (
+      <Provider>
+        <SafeAreaView
+          style={[
+            commonStyles.container,
+            { backgroundColor: currentTheme.background },
+          ]}
+        >
+          <StatusBar style="dark" />
+
+          <Animated.View style={[{ flex: 1, opacity: fadeAnim }]}>
+            <TouchableOpacity
+              style={{ flex: 1 }}
+              onPress={handleFocusDoubleTap}
+              activeOpacity={1}
+            >
+              {/* Hint d'aide (disparait après 3s) */}
+              {showFocusHint && (
+                <Animated.View
+                  style={{
+                    position: "absolute",
+                    top: 60,
+                    left: 0,
+                    right: 0,
+                    zIndex: 50,
+                    alignItems: "center",
+                  }}
+                >
+                  <View
+                    style={{
+                      backgroundColor: currentTheme.text + "90",
+                      paddingHorizontal: 24,
+                      paddingVertical: 12,
+                      borderRadius: 25,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: currentTheme.background,
+                        fontSize: 14,
+                        fontWeight: "500",
+                        textAlign: "center",
+                      }}
+                    >
+                      {Platform.OS === "web"
+                        ? "Double-clic ou Échap pour les contrôles • Ctrl+Espace pour arrêter"
+                        : "Double-tap pour les contrôles"}
+                    </Text>
+                  </View>
+                </Animated.View>
+              )}
+
+              {/* Timer discret en haut à droite */}
+              <View
+                style={{
+                  position: "absolute",
+                  top: 40,
+                  right: 30,
+                  zIndex: 40,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 24,
+                    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+                    color: currentTheme.muted,
+                  }}
+                >
+                  {formatTime(timeRemaining)}
+                </Text>
+              </View>
+
+              {/* Zone d'écriture plein écran */}
+              <TouchableOpacity
+                style={{
+                  flex: 1,
+                  justifyContent: "center",
+                  alignItems: "center",
+                  paddingHorizontal: 40,
+                  paddingVertical: 60,
+                }}
+                onPress={handleFocusDoubleTap}
+                activeOpacity={1}
+              >
+                <TextInput
+                  ref={textInputRef}
+                  key={`focus-${fontSize}-${selectedFont}`}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    color: currentTheme.text,
+                    fontSize: fontSize + 4,
+                    lineHeight: (fontSize + 4) * 1.6,
+                    fontFamily: selectedFont,
+                    textAlign: "center",
+                    textAlignVertical: "center",
+                    borderWidth: 0,
+                    borderColor: "transparent",
+                    ...(Platform.OS === "web" && {
+                      outline: "none",
+                      border: "none",
+                      boxShadow: "none",
+                    }),
+                  }}
+                  value={text}
+                  onChangeText={setText}
+                  placeholder={placeholder}
+                  placeholderTextColor={currentTheme.muted}
+                  multiline
+                  autoCorrect={false}
+                  spellCheck={false}
+                  autoCapitalize="none"
+                  scrollEnabled={true}
+                  selectionColor={currentTheme.accent + "40"}
+                  underlineColorAndroid="transparent"
+                />
+              </TouchableOpacity>
+
+              {/* Indicateur de session en bas */}
+              <View
+                style={{
+                  position: "absolute",
+                  bottom: 40,
+                  left: 0,
+                  right: 0,
+                  alignItems: "center",
+                  zIndex: 40,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 14,
+                    color: currentTheme.muted,
+                  }}
+                >
+                  ● Session en cours • {wordCount} mot{wordCount > 1 ? "s" : ""}
+                </Text>
+              </View>
+            </TouchableOpacity>
+
+            {/* Contrôles révélés */}
+            {showFocusControls && (
+              <View
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  backgroundColor: "rgba(0,0,0,0.5)",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  zIndex: 100,
+                }}
+              >
+                <View
+                  style={{
+                    backgroundColor: currentTheme.surface,
+                    borderRadius: 20,
+                    padding: 32,
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 8 },
+                    shadowOpacity: 0.25,
+                    shadowRadius: 20,
+                    elevation: 15,
+                    minWidth: 300,
+                    alignItems: "center",
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 18,
+                      color: currentTheme.textSecondary,
+                      marginBottom: 16,
+                    }}
+                  >
+                    Session en cours
+                  </Text>
+
+                  <Text
+                    style={{
+                      fontSize: 32,
+                      fontFamily:
+                        Platform.OS === "ios" ? "Courier" : "monospace",
+                      color: currentTheme.text,
+                      marginBottom: 24,
+                      fontWeight: "600",
+                    }}
+                  >
+                    {formatTime(timeRemaining)}
+                  </Text>
+
+                  <View style={{ flexDirection: "row", gap: 16 }}>
+                    <TouchableOpacity
+                      onPress={handleStopTimer}
+                      style={{
+                        backgroundColor: "#ef4444",
+                        paddingHorizontal: 24,
+                        paddingVertical: 12,
+                        borderRadius: 12,
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 8,
+                      }}
+                    >
+                      <Text style={{ color: "white", fontSize: 16 }}>⏹</Text>
+                      <Text
+                        style={{
+                          color: "white",
+                          fontSize: 16,
+                          fontWeight: "500",
+                        }}
+                      >
+                        Arrêter
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      onPress={continueFocusSession}
+                      style={{
+                        backgroundColor: currentTheme.accent,
+                        paddingHorizontal: 24,
+                        paddingVertical: 12,
+                        borderRadius: 12,
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 8,
+                      }}
+                    >
+                      <Text style={{ color: "white", fontSize: 16 }}>↩</Text>
+                      <Text
+                        style={{
+                          color: "white",
+                          fontSize: 16,
+                          fontWeight: "500",
+                        }}
+                      >
+                        Continuer
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      color: currentTheme.muted,
+                      marginTop: 16,
+                      textAlign: "center",
+                    }}
+                  >
+                    Se cache automatiquement dans 4 secondes
+                  </Text>
+                </View>
+              </View>
+            )}
+          </Animated.View>
+        </SafeAreaView>
+      </Provider>
+    );
+  }
+
+  // Mode Normal - Interface existante avec nouvelle sidebar
   return (
     <Provider>
       <SafeAreaView
-        style={[commonStyles.container, { backgroundColor: currentTheme.background }]}
+        style={[
+          commonStyles.container,
+          { backgroundColor: currentTheme.background },
+        ]}
       >
         <StatusBar style="dark" />
 
@@ -537,7 +787,10 @@ export default function MainPage() {
 
             {/* Footer épuré */}
             <View
-              style={[mainPageStyles.footer, { borderTopColor: currentTheme.border }]}
+              style={[
+                mainPageStyles.footer,
+                { borderTopColor: currentTheme.border },
+              ]}
             >
               <View style={mainPageStyles.footerLeft}>
                 <Text
@@ -682,52 +935,34 @@ export default function MainPage() {
             </TouchableOpacity>
           </Modal>
 
+          {/* ✅ Nouvelle sidebar avec corbeille */}
           {sidebarOpen && (
-            <View
-              style={[
-                sidebarStyles.sidebar,
-                {
-                  backgroundColor: currentTheme.surface,
-                  borderLeftColor: currentTheme.border,
-                },
-              ]}
-            >
-              <View
-                style={[
-                  sidebarStyles.sidebarHeader,
-                  { borderBottomColor: currentTheme.border },
-                ]}
-              >
-                <Text
-                  style={[
-                    sidebarStyles.sidebarTitle,
-                    { color: currentTheme.text },
-                  ]}
-                >
-                  Sessions
-                </Text>
-                <TouchableOpacity onPress={() => setSidebarOpen(false)}>
-                  <Text
-                    style={[
-                      sidebarStyles.sidebarClose,
-                      { color: currentTheme.muted },
-                    ]}
-                  >
-                    ×
-                  </Text>
-                </TouchableOpacity>
-              </View>
-
-              <FlatList
-                data={entries}
-                renderItem={renderSidebarEntry}
-                keyExtractor={(item) => item.id}
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={sidebarStyles.sidebarContent}
-              />
-            </View>
+            <EnhancedSidebar
+              currentTheme={currentTheme}
+              currentEntry={currentEntry}
+              entries={entries}
+              trashEntries={trashEntries}
+              onClose={() => setSidebarOpen(false)}
+              onLoadEntry={loadEntry}
+              onShareEntry={shareEntry}
+              onMoveToTrash={moveEntryToTrash}
+              onRestoreFromTrash={restoreFromTrash}
+              onDeletePermanently={deleteEntryPermanently}
+              onEmptyTrash={emptyTrash}
+              getDaysUntilDeletion={getDaysUntilDeletion}
+              onOpenPreview={openPreview}
+            />
           )}
         </View>
+        <PreviewModal
+          visible={isPreviewModalVisible}
+          entry={previewEntry}
+          currentTheme={currentTheme}
+          onClose={closePreview}
+          onLoadEntry={loadEntry}
+          onShare={shareEntry}
+          isFromTrash={previewEntry?.isInTrash || false}
+        />
       </SafeAreaView>
     </Provider>
   );
