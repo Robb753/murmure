@@ -1,0 +1,35 @@
+{
+  "expo": {
+    "name": "Murmure",
+    "slug": "murmure",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/images/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1a1a2e"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.yourname.murmure"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#1a1a2e"
+      },
+      "package": "com.yourname.murmure"
+    },
+    "web": {
+      "favicon": "./assets/images/favicon.png",
+      "name": "Murmure - Ton espace d'écriture libre"
+    },
+    "extra": {
+      "description": "Une app d'écriture libre pour exprimer tes pensées sans filtre"
+    },
+    "plugins": ["expo-router", "expo-audio"]
+  }
+}
