@@ -28,7 +28,6 @@ import { useAudio } from "@/hooks/useAudio";
 import { useAdvancedTheme } from "@/hooks/useAdvancedTheme";
 
 // Import de la nouvelle sidebar
-import { EnhancedSidebar } from "@/components/EnhancedSidebar";
 
 import {
   commonStyles,
@@ -37,7 +36,8 @@ import {
   modalStyles,
 } from "@/styles";
 import { PreviewModal } from "@/components/PreviewModal";
-import { ThemeSelector } from "@/components/ThemeSelector";
+import ThemeSelector from "@/components/ThemeSelector";
+import { EnhancedSidebar } from "@/components/EnhancedSidebar";
 
 // Tailles de police disponibles
 const fontSizes = [16, 20, 24, 28, 32, 36, 40];
@@ -431,21 +431,30 @@ export default function MainPage() {
                 flex: 1,
                 paddingHorizontal: 40,
                 paddingVertical: 60,
+                alignItems: "center",
               }}
               onPress={handleFocusDoubleTap}
               activeOpacity={1}
             >
+              <view
+    style={{
+      width: "100%",
+      maxWidth: 1150,
+      height: "100%",
+      position: "relative",
+    }}
+  >
               {/* Placeholder centré flottant */}
               {text.trim() === "" && (
                 <View
                   style={{
-                    position: 'absolute',
-                    top: '50%',
+                    position: "absolute",
+                    top: "50%",
                     left: 40,
                     right: 40,
-                    transform: [{ translateY: -20 }], // ✅ Centre parfaitement
-                    alignItems: 'center',
-                    pointerEvents: 'none',
+                    transform: [{ translateY: -20 }],
+                    alignItems: "center",
+                    pointerEvents: "none",
                     zIndex: 1,
                   }}
                 >
@@ -454,7 +463,7 @@ export default function MainPage() {
                       color: currentTheme.muted,
                       fontSize: fontSize + 4,
                       fontFamily: selectedFont,
-                      textAlign: 'center', // ✅ Placeholder centré
+                      textAlign: "center",
                       opacity: 0.7,
                     }}
                   >
@@ -473,11 +482,11 @@ export default function MainPage() {
                   fontSize: fontSize + 4,
                   lineHeight: (fontSize + 4) * 1.6,
                   fontFamily: selectedFont,
-                  textAlign: "left", // ✅ Texte aligné à gauche
-                  textAlignVertical: "top", // ✅ Texte commence en haut
+                  textAlign: "left",
+                  textAlignVertical: "top",
                   borderWidth: 0,
                   borderColor: "transparent",
-                  backgroundColor: 'transparent',
+                  backgroundColor: "transparent",
                   ...(Platform.OS === "web" && {
                     outline: "none",
                     border: "none",
@@ -502,6 +511,7 @@ export default function MainPage() {
                   }
                 }}
               />
+              </view>
             </TouchableOpacity>
 
             {/* Indicateur de session en bas */}
@@ -785,6 +795,34 @@ export default function MainPage() {
             {/* Zone d'écriture */}
             <View style={mainPageStyles.writingContainer}>
               <View style={mainPageStyles.paperSheet}>
+                {/* Placeholder centré flottant pour mode normal */}
+                {text.trim() === "" && (
+                  <View
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      justifyContent: "center",
+                      alignItems: "center",
+                      pointerEvents: "none",
+                      zIndex: 1,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: currentTheme.muted,
+                        fontSize: fontSize,
+                        fontFamily: selectedFont,
+                        textAlign: "center",
+                        opacity: 0.7,
+                      }}
+                    >
+                      {placeholder}
+                    </Text>
+                  </View>
+                )}
                 <TextInput
                   ref={textInputRef}
                   key={`${fontSize}-${selectedFont}`}
@@ -795,7 +833,8 @@ export default function MainPage() {
                       fontSize: fontSize,
                       lineHeight: fontSize * 1.6,
                       fontFamily: selectedFont,
-                      textAlign: "left", // ✅ AJOUTÉ - Alignement à gauche
+                      textAlign: "left",
+                      textAlignVertical: "top",
                       borderWidth: 0,
                       borderColor: "transparent",
                       // Styles spécifiques pour supprimer bordure web
@@ -808,9 +847,10 @@ export default function MainPage() {
                   ]}
                   value={text}
                   onChangeText={setText}
-                  placeholder={placeholder}
+                  placeholder=""
                   placeholderTextColor={currentTheme.muted}
                   multiline
+                  textAlign="center"
                   textAlignVertical="center"
                   autoCorrect={false}
                   spellCheck={false}
@@ -988,10 +1028,11 @@ export default function MainPage() {
               onEmptyTrash={emptyTrash}
               getDaysUntilDeletion={getDaysUntilDeletion}
               onOpenPreview={openPreview}
+              onDataChanged={loadData}
             />
           )}
         </View>
-        
+
         {/* ✅ Modal de prévisualisation */}
         <PreviewModal
           visible={isPreviewModalVisible}
@@ -1002,7 +1043,7 @@ export default function MainPage() {
           onShare={shareEntry}
           isFromTrash={previewEntry?.isInTrash || false}
         />
-        
+
         {/* ✅ Sélecteur de thème */}
         <ThemeSelector
           visible={showThemeSelector}

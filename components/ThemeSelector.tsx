@@ -1,19 +1,15 @@
 import React from "react";
-import { View, Text, TouchableOpacity, Modal, FlatList } from "react-native";
-import { ThemeName } from "@/hooks/useAdvancedTheme";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Modal,
+  FlatList,
+  StyleSheet,
+} from "react-native";
+import { ThemeSelectorProps, ThemeInfo } from "@/types/theme";
 
-interface ThemeSelectorProps {
-  visible: boolean;
-  onClose: () => void;
-  currentTheme: any;
-  currentThemeName: ThemeName;
-  isDarkMode: boolean;
-  onThemeChange: (themeName: ThemeName) => void;
-  onToggleDarkMode: () => void;
-  getThemesList: () => { key: ThemeName; name: string; colors: any }[];
-}
-
-export const ThemeSelector = ({
+const ThemeSelector: React.FC<ThemeSelectorProps> = ({
   visible,
   onClose,
   currentTheme,
@@ -22,70 +18,73 @@ export const ThemeSelector = ({
   onThemeChange,
   onToggleDarkMode,
   getThemesList,
-}: ThemeSelectorProps) => {
+}) => {
   const themes = getThemesList();
 
-  const renderThemeItem = ({ item }: { item: (typeof themes)[0] }) => {
+  const renderThemeItem = ({ item }: { item: ThemeInfo }) => {
     const isSelected = item.key === currentThemeName;
 
     return (
       <TouchableOpacity
         onPress={() => onThemeChange(item.key)}
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          padding: 16,
-          backgroundColor: isSelected
-            ? currentTheme.accent + "20"
-            : "transparent",
-          borderRadius: 12,
-          marginVertical: 4,
-          borderWidth: isSelected ? 2 : 1,
-          borderColor: isSelected ? currentTheme.accent : currentTheme.border,
-        }}
+        style={[
+          styles.themeItem,
+          {
+            backgroundColor: isSelected
+              ? currentTheme.accent + "20"
+              : "transparent",
+            borderWidth: isSelected ? 2 : 1,
+            borderColor: isSelected ? currentTheme.accent : currentTheme.border,
+          },
+        ]}
+        accessibilityRole="button"
+        accessibilityLabel={`Sélectionner le thème ${item.name}`}
+        accessibilityState={{ selected: isSelected }}
       >
         {/* Aperçu des couleurs */}
-        <View style={{ flexDirection: "row", marginRight: 12 }}>
+        <View style={styles.colorPreview}>
           <View
-            style={{
-              width: 20,
-              height: 20,
-              borderRadius: 10,
-              backgroundColor: item.colors.accent,
-              marginRight: 4,
-              borderWidth: 1,
-              borderColor: currentTheme.border,
-            }}
+            style={[
+              styles.colorSample,
+              {
+                backgroundColor: item.colors.accent,
+                borderColor: currentTheme.border,
+              },
+            ]}
           />
           <View
-            style={{
-              width: 20,
-              height: 20,
-              borderRadius: 10,
-              backgroundColor: item.colors.surface,
-              borderWidth: 1,
-              borderColor: item.colors.border,
-            }}
+            style={[
+              styles.colorSample,
+              {
+                backgroundColor: item.colors.surface,
+                borderColor: item.colors.border,
+              },
+            ]}
           />
         </View>
 
         <Text
-          style={{
-            flex: 1,
-            fontSize: 16,
-            fontWeight: isSelected ? "600" : "400",
-            color: isSelected ? currentTheme.accent : currentTheme.text,
-          }}
+          style={[
+            styles.themeName,
+            {
+              color: isSelected ? currentTheme.accent : currentTheme.text,
+              fontWeight: isSelected ? "600" : "400",
+            },
+          ]}
         >
           {item.name}
         </Text>
 
         {isSelected && (
-          <Text style={{ color: currentTheme.accent, fontSize: 16 }}>✓</Text>
+          <Text style={[styles.selectedIcon, { color: currentTheme.accent }]}>
+            ✓
+          </Text>
         )}
       </TouchableOpacity>
     );
   };
+
+  const keyExtractor = (item: ThemeInfo) => item.key;
 
   return (
     <Modal
@@ -95,87 +94,63 @@ export const ThemeSelector = ({
       onRequestClose={onClose}
     >
       <View
-        style={{
-          flex: 1,
-          backgroundColor: currentTheme.background,
-        }}
+        style={[styles.container, { backgroundColor: currentTheme.background }]}
       >
         {/* Header */}
         <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-            padding: 20,
-            borderBottomWidth: 1,
-            borderBottomColor: currentTheme.border,
-          }}
+          style={[styles.header, { borderBottomColor: currentTheme.border }]}
         >
-          <Text
-            style={{
-              fontSize: 20,
-              fontWeight: "600",
-              color: currentTheme.text,
-            }}
-          >
+          <Text style={[styles.title, { color: currentTheme.text }]}>
             Choisir un thème
           </Text>
-          <TouchableOpacity onPress={onClose}>
-            <Text
-              style={{
-                fontSize: 18,
-                color: currentTheme.text,
-              }}
-            >
+          <TouchableOpacity
+            onPress={onClose}
+            accessibilityRole="button"
+            accessibilityLabel="Fermer le sélecteur de thème"
+          >
+            <Text style={[styles.closeButton, { color: currentTheme.text }]}>
               ✕
             </Text>
           </TouchableOpacity>
         </View>
 
         {/* Toggle Dark Mode */}
-        <View style={{ padding: 20 }}>
+        <View style={styles.darkModeSection}>
           <TouchableOpacity
             onPress={onToggleDarkMode}
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-              padding: 16,
-              backgroundColor: currentTheme.surface,
-              borderRadius: 12,
-              borderWidth: 1,
-              borderColor: currentTheme.border,
-            }}
+            style={[
+              styles.darkModeToggle,
+              {
+                backgroundColor: currentTheme.surface,
+                borderColor: currentTheme.border,
+              },
+            ]}
+            accessibilityRole="switch"
+            accessibilityState={{ checked: isDarkMode }}
+            accessibilityLabel={`${
+              isDarkMode ? "Désactiver" : "Activer"
+            } le mode sombre`}
           >
-            <Text
-              style={{
-                fontSize: 16,
-                fontWeight: "500",
-                color: currentTheme.text,
-              }}
-            >
+            <Text style={[styles.darkModeLabel, { color: currentTheme.text }]}>
               {isDarkMode ? "🌙 Mode sombre" : "☀️ Mode clair"}
             </Text>
             <View
-              style={{
-                width: 50,
-                height: 30,
-                borderRadius: 15,
-                backgroundColor: isDarkMode
-                  ? currentTheme.accent
-                  : currentTheme.border,
-                justifyContent: "center",
-                paddingHorizontal: 3,
-              }}
+              style={[
+                styles.switchContainer,
+                {
+                  backgroundColor: isDarkMode
+                    ? currentTheme.accent
+                    : currentTheme.border,
+                },
+              ]}
             >
               <View
-                style={{
-                  width: 24,
-                  height: 24,
-                  borderRadius: 12,
-                  backgroundColor: "white",
-                  alignSelf: isDarkMode ? "flex-end" : "flex-start",
-                }}
+                style={[
+                  styles.switchThumb,
+                  {
+                    alignSelf: isDarkMode ? "flex-end" : "flex-start",
+                  },
+                ]}
               />
             </View>
           </TouchableOpacity>
@@ -185,26 +160,15 @@ export const ThemeSelector = ({
         <FlatList
           data={themes}
           renderItem={renderThemeItem}
-          keyExtractor={(item) => item.key}
-          contentContainerStyle={{ padding: 20, paddingTop: 0 }}
+          keyExtractor={keyExtractor}
+          contentContainerStyle={styles.themesList}
           showsVerticalScrollIndicator={false}
+          accessibilityRole="list"
         />
 
         {/* Footer avec info */}
-        <View
-          style={{
-            padding: 20,
-            borderTopWidth: 1,
-            borderTopColor: currentTheme.border,
-          }}
-        >
-          <Text
-            style={{
-              textAlign: "center",
-              fontSize: 12,
-              color: currentTheme.muted,
-            }}
-          >
+        <View style={[styles.footer, { borderTopColor: currentTheme.border }]}>
+          <Text style={[styles.footerText, { color: currentTheme.muted }]}>
             Chaque thème a son mode clair et sombre
           </Text>
         </View>
@@ -212,3 +176,91 @@ export const ThemeSelector = ({
     </Modal>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 20,
+    borderBottomWidth: 1,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: "600",
+  },
+  closeButton: {
+    fontSize: 18,
+    padding: 4,
+  },
+  darkModeSection: {
+    padding: 20,
+  },
+  darkModeToggle: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  darkModeLabel: {
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  switchContainer: {
+    width: 50,
+    height: 30,
+    borderRadius: 15,
+    justifyContent: "center",
+    paddingHorizontal: 3,
+  },
+  switchThumb: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "white",
+  },
+  themesList: {
+    padding: 20,
+    paddingTop: 0,
+  },
+  themeItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
+    borderRadius: 12,
+    marginVertical: 4,
+  },
+  colorPreview: {
+    flexDirection: "row",
+    marginRight: 12,
+  },
+  colorSample: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    marginRight: 4,
+    borderWidth: 1,
+  },
+  themeName: {
+    flex: 1,
+    fontSize: 16,
+  },
+  selectedIcon: {
+    fontSize: 16,
+  },
+  footer: {
+    padding: 20,
+    borderTopWidth: 1,
+  },
+  footerText: {
+    textAlign: "center",
+    fontSize: 12,
+  },
+});
+
+export default ThemeSelector;

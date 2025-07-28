@@ -1,15 +1,31 @@
-import { useState, useCallback } from "react";
-import { MD3LightTheme, MD3DarkTheme } from "react-native-paper";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import * as Haptics from "expo-haptics";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import {
+  ThemeName,
+  ThemeCollection,
+  ThemeInfo,
+  MurmureTheme,
+  UseAdvancedThemeReturn,
+  ThemePreferences,
+  ThemeHookConfig,
+  isValidThemeName,
+} from "@/types/theme";
 
-// Définition des thèmes personnalisés
-export const customThemes = {
+// Configuration par défaut
+const DEFAULT_CONFIG: Required<ThemeHookConfig> = {
+  persistPreferences: true,
+  storageKey: "murmure_theme_preferences",
+  defaultTheme: "ocean",
+  defaultMode: "light",
+};
+
+// Définition complète des thèmes avec types stricts
+const customThemes: ThemeCollection = {
   ocean: {
     name: "Ocean 🌊",
     light: {
-      ...MD3LightTheme,
       colors: {
-        ...MD3LightTheme.colors,
         primary: "#006494",
         primaryContainer: "#cae6ff",
         secondary: "#4f616a",
@@ -25,7 +41,6 @@ export const customThemes = {
         onBackground: "#191c1e",
         outline: "#6f797a",
       },
-      // Couleurs personnalisées pour Murmure
       murmure: {
         background: "#f0f8ff",
         surface: "#ffffff",
@@ -37,9 +52,7 @@ export const customThemes = {
       },
     },
     dark: {
-      ...MD3DarkTheme,
       colors: {
-        ...MD3DarkTheme.colors,
         primary: "#90cdf4",
         primaryContainer: "#00497a",
         secondary: "#b6cad6",
@@ -70,9 +83,7 @@ export const customThemes = {
   forest: {
     name: "Forest 🌲",
     light: {
-      ...MD3LightTheme,
       colors: {
-        ...MD3LightTheme.colors,
         primary: "#2d5a27",
         primaryContainer: "#b4f39e",
         secondary: "#52634f",
@@ -99,9 +110,7 @@ export const customThemes = {
       },
     },
     dark: {
-      ...MD3DarkTheme,
       colors: {
-        ...MD3DarkTheme.colors,
         primary: "#99d584",
         primaryContainer: "#0f3f0b",
         secondary: "#b9ccb4",
@@ -132,9 +141,7 @@ export const customThemes = {
   sunset: {
     name: "Sunset 🌅",
     light: {
-      ...MD3LightTheme,
       colors: {
-        ...MD3LightTheme.colors,
         primary: "#b8390e",
         primaryContainer: "#ffdbca",
         secondary: "#75574a",
@@ -161,9 +168,7 @@ export const customThemes = {
       },
     },
     dark: {
-      ...MD3DarkTheme,
       colors: {
-        ...MD3DarkTheme.colors,
         primary: "#ffb692",
         primaryContainer: "#8f2700",
         secondary: "#e7bdb0",
@@ -194,9 +199,7 @@ export const customThemes = {
   lavender: {
     name: "Lavender 💜",
     light: {
-      ...MD3LightTheme,
       colors: {
-        ...MD3LightTheme.colors,
         primary: "#6947c0",
         primaryContainer: "#eaddff",
         secondary: "#625b71",
@@ -223,9 +226,7 @@ export const customThemes = {
       },
     },
     dark: {
-      ...MD3DarkTheme,
       colors: {
-        ...MD3DarkTheme.colors,
         primary: "#d0bcff",
         primaryContainer: "#4f2b99",
         secondary: "#ccc2dc",
@@ -256,9 +257,7 @@ export const customThemes = {
   midnight: {
     name: "Midnight 🌙",
     light: {
-      ...MD3LightTheme,
       colors: {
-        ...MD3LightTheme.colors,
         primary: "#1f2937",
         primaryContainer: "#e5e7eb",
         secondary: "#4b5563",
@@ -285,9 +284,7 @@ export const customThemes = {
       },
     },
     dark: {
-      ...MD3DarkTheme,
       colors: {
-        ...MD3DarkTheme.colors,
         primary: "#f3f4f6",
         primaryContainer: "#374151",
         secondary: "#d1d5db",
@@ -314,42 +311,130 @@ export const customThemes = {
       },
     },
   },
-};
+} as const;
 
-export type ThemeName = keyof typeof customThemes;
-export type ThemeMode = "light" | "dark";
+export const useAdvancedTheme = (
+  config: ThemeHookConfig = {}
+): UseAdvancedThemeReturn => {
+  const finalConfig = { ...DEFAULT_CONFIG, ...config };
 
-export const useAdvancedTheme = () => {
-  const [currentThemeName, setCurrentThemeName] = useState<ThemeName>("ocean");
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  // États avec types stricts
+  const [currentThemeName, setCurrentThemeName] = useState<ThemeName>(
+    finalConfig.defaultTheme
+  );
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(
+    finalConfig.defaultMode === "dark"
+  );
 
-  const currentTheme =
-    customThemes[currentThemeName][isDarkMode ? "dark" : "light"];
-  const currentMurmureTheme = currentTheme.murmure;
+  // Thème actuel calculé de manière mémorisée
+  const currentTheme = useMemo((): MurmureTheme => {
+    const themeDefinition = customThemes[currentThemeName];
+    const mode = isDarkMode ? "dark" : "light";
+    return themeDefinition[mode].murmure;
+  }, [currentThemeName, isDarkMode]);
 
-  const changeTheme = useCallback((themeName: ThemeName) => {
-    setCurrentThemeName(themeName);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-  }, []);
+  // Thème Paper calculé de manière mémorisée
+  const paperTheme = useMemo(() => {
+    const themeDefinition = customThemes[currentThemeName];
+    const mode = isDarkMode ? "dark" : "light";
+    return themeDefinition[mode];
+  }, [currentThemeName, isDarkMode]);
 
+  // Sauvegarde des préférences
+  const savePreferences = useCallback(
+    async (themeName: ThemeName, darkMode: boolean) => {
+      if (!finalConfig.persistPreferences) return;
+
+      try {
+        const preferences: ThemePreferences = {
+          themeName,
+          isDarkMode: darkMode,
+        };
+        await AsyncStorage.setItem(
+          finalConfig.storageKey,
+          JSON.stringify(preferences)
+        );
+      } catch (error) {
+        console.warn("Erreur sauvegarde préférences thème:", error);
+      }
+    },
+    [finalConfig.persistPreferences, finalConfig.storageKey]
+  );
+
+  // Chargement des préférences au démarrage
+  useEffect(() => {
+    if (!finalConfig.persistPreferences) return;
+
+    const loadPreferences = async () => {
+      try {
+        const stored = await AsyncStorage.getItem(finalConfig.storageKey);
+        if (!stored) return;
+
+        const preferences: ThemePreferences = JSON.parse(stored);
+
+        // Validation avec type guards
+        if (isValidThemeName(preferences.themeName)) {
+          setCurrentThemeName(preferences.themeName);
+        }
+
+        if (typeof preferences.isDarkMode === "boolean") {
+          setIsDarkMode(preferences.isDarkMode);
+        }
+      } catch (error) {
+        console.warn("Erreur chargement préférences thème:", error);
+      }
+    };
+
+    loadPreferences();
+  }, [finalConfig.persistPreferences, finalConfig.storageKey]);
+
+  // Action de changement de thème avec validation
+  const changeTheme = useCallback(
+    (themeName: ThemeName) => {
+      if (!isValidThemeName(themeName)) {
+        console.error(`Nom de thème invalide: ${themeName}`);
+        return;
+      }
+
+      setCurrentThemeName(themeName);
+      savePreferences(themeName, isDarkMode);
+
+      // Feedback haptique
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {
+        // Ignore si les haptics ne sont pas disponibles
+      });
+    },
+    [isDarkMode, savePreferences]
+  );
+
+  // Action de basculement du mode sombre
   const toggleDarkMode = useCallback(() => {
-    setIsDarkMode(!isDarkMode);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-  }, [isDarkMode]);
+    const newDarkMode = !isDarkMode;
+    setIsDarkMode(newDarkMode);
+    savePreferences(currentThemeName, newDarkMode);
 
-  const getThemesList = useCallback(() => {
+    // Feedback haptique
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {
+      // Ignore si les haptics ne sont pas disponibles
+    });
+  }, [isDarkMode, currentThemeName, savePreferences]);
+
+  // Liste des thèmes avec mémorisation
+  const getThemesList = useCallback((): readonly ThemeInfo[] => {
+    const mode = isDarkMode ? "dark" : "light";
+
     return Object.entries(customThemes).map(([key, theme]) => ({
       key: key as ThemeName,
       name: theme.name,
-      colors: theme[isDarkMode ? "dark" : "light"].murmure,
+      colors: theme[mode].murmure,
     }));
   }, [isDarkMode]);
 
   return {
     currentThemeName,
     isDarkMode,
-    currentTheme: currentMurmureTheme,
-    paperTheme: currentTheme,
+    currentTheme,
+    paperTheme,
     changeTheme,
     toggleDarkMode,
     getThemesList,
