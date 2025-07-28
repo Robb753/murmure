@@ -62,15 +62,14 @@ const ActiveEntry = ({
     setMenuVisible(false);
   };
 
-  const handleMoveToTrash = () => {
-    console.log("🟢 ÉTAPE 1 - handleMoveToTrash appelé pour:", item.id);
-    console.log("🟢 ÉTAPE 1 - onMoveToTrash existe?", typeof onMoveToTrash);
+  const handleMoveToTrash = async () => {
+    console.log("🗑️ handleMoveToTrash appelé pour:", item.id);
 
     try {
       onMoveToTrash(item);
-      console.log("🟢 ÉTAPE 1 - onMoveToTrash appelé avec succès");
+      console.log("✅ Suppression terminée");
     } catch (error) {
-      console.error("🔴 ÉTAPE 1 - Erreur dans onMoveToTrash:", error);
+      console.error("❌ Erreur suppression:", error);
     }
 
     setMenuVisible(false);

@@ -14,6 +14,8 @@ export const useStorage = () => {
   const [previewEntry, setPreviewEntry] = useState<MurmureEntry | null>(null);
   const [isPreviewModalVisible, setIsPreviewModalVisible] = useState(false);
 
+  
+
   // Fonction pour ouvrir la prévisualisation
   const openPreview = useCallback((entry: MurmureEntry) => {
     console.log("👁️ Ouverture preview pour:", entry.id);

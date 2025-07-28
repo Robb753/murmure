@@ -25,7 +25,7 @@ import { Provider } from "react-native-paper";
 import { useTimer } from "@/hooks/useTimer";
 import { useStorage } from "@/hooks/useStorage";
 import { useAudio } from "@/hooks/useAudio";
-import { useTheme } from "@/hooks/useTheme";
+import { useAdvancedTheme } from "@/hooks/useAdvancedTheme";
 
 // Import de la nouvelle sidebar
 import { EnhancedSidebar } from "@/components/EnhancedSidebar";
@@ -37,6 +37,7 @@ import {
   modalStyles,
 } from "@/styles";
 import { PreviewModal } from "@/components/PreviewModal";
+import { ThemeSelector } from "@/components/ThemeSelector";
 
 // Tailles de police disponibles
 const fontSizes = [16, 20, 24, 28, 32, 36, 40];
@@ -88,8 +89,16 @@ export default function MainPage() {
   const textInputRef = useRef<TextInput>(null);
 
   // Hooks personnalisés
-  const { currentTheme, isDarkMode, toggleDarkMode } = useTheme();
+  const {
+    currentTheme,
+    isDarkMode,
+    toggleDarkMode,
+    currentThemeName,
+    changeTheme,
+    getThemesList,
+  } = useAdvancedTheme();
   const { loadSounds, playSound, cleanupSounds } = useAudio();
+  const [showThemeSelector, setShowThemeSelector] = useState(false);
 
   // ✅ Hook storage mis à jour avec les nouvelles fonctionnalités
   const {
@@ -360,134 +369,161 @@ export default function MainPage() {
           <StatusBar style="dark" />
 
           <Animated.View style={[{ flex: 1, opacity: fadeAnim }]}>
+            {/* Hint d'aide (disparait après 3s) */}
+            {showFocusHint && (
+              <Animated.View
+                style={{
+                  position: "absolute",
+                  top: 60,
+                  left: 0,
+                  right: 0,
+                  zIndex: 50,
+                  alignItems: "center",
+                }}
+              >
+                <View
+                  style={{
+                    backgroundColor: currentTheme.text + "90",
+                    paddingHorizontal: 24,
+                    paddingVertical: 12,
+                    borderRadius: 25,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: currentTheme.background,
+                      fontSize: 14,
+                      fontWeight: "500",
+                      textAlign: "center",
+                    }}
+                  >
+                    {Platform.OS === "web"
+                      ? "Double-clic ou Échap pour les contrôles • Ctrl+Espace pour arrêter"
+                      : "Double-tap pour les contrôles"}
+                  </Text>
+                </View>
+              </Animated.View>
+            )}
+
+            {/* Timer discret en haut à droite */}
+            <View
+              style={{
+                position: "absolute",
+                top: 40,
+                right: 30,
+                zIndex: 40,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 24,
+                  fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+                  color: currentTheme.muted,
+                }}
+              >
+                {formatTime(timeRemaining)}
+              </Text>
+            </View>
+
+            {/* Zone d'écriture plein écran */}
             <TouchableOpacity
-              style={{ flex: 1 }}
+              style={{
+                flex: 1,
+                paddingHorizontal: 40,
+                paddingVertical: 60,
+              }}
               onPress={handleFocusDoubleTap}
               activeOpacity={1}
             >
-              {/* Hint d'aide (disparait après 3s) */}
-              {showFocusHint && (
-                <Animated.View
+              {/* Placeholder centré flottant */}
+              {text.trim() === "" && (
+                <View
                   style={{
-                    position: "absolute",
-                    top: 60,
-                    left: 0,
-                    right: 0,
-                    zIndex: 50,
-                    alignItems: "center",
+                    position: 'absolute',
+                    top: '50%',
+                    left: 40,
+                    right: 40,
+                    transform: [{ translateY: -20 }], // ✅ Centre parfaitement
+                    alignItems: 'center',
+                    pointerEvents: 'none',
+                    zIndex: 1,
                   }}
                 >
-                  <View
+                  <Text
                     style={{
-                      backgroundColor: currentTheme.text + "90",
-                      paddingHorizontal: 24,
-                      paddingVertical: 12,
-                      borderRadius: 25,
+                      color: currentTheme.muted,
+                      fontSize: fontSize + 4,
+                      fontFamily: selectedFont,
+                      textAlign: 'center', // ✅ Placeholder centré
+                      opacity: 0.7,
                     }}
                   >
-                    <Text
-                      style={{
-                        color: currentTheme.background,
-                        fontSize: 14,
-                        fontWeight: "500",
-                        textAlign: "center",
-                      }}
-                    >
-                      {Platform.OS === "web"
-                        ? "Double-clic ou Échap pour les contrôles • Ctrl+Espace pour arrêter"
-                        : "Double-tap pour les contrôles"}
-                    </Text>
-                  </View>
-                </Animated.View>
+                    {placeholder}
+                  </Text>
+                </View>
               )}
 
-              {/* Timer discret en haut à droite */}
-              <View
+              <TextInput
+                ref={textInputRef}
+                key={`focus-${fontSize}-${selectedFont}`}
                 style={{
-                  position: "absolute",
-                  top: 40,
-                  right: 30,
-                  zIndex: 40,
+                  width: "100%",
+                  height: "100%",
+                  color: currentTheme.text,
+                  fontSize: fontSize + 4,
+                  lineHeight: (fontSize + 4) * 1.6,
+                  fontFamily: selectedFont,
+                  textAlign: "left", // ✅ Texte aligné à gauche
+                  textAlignVertical: "top", // ✅ Texte commence en haut
+                  borderWidth: 0,
+                  borderColor: "transparent",
+                  backgroundColor: 'transparent',
+                  ...(Platform.OS === "web" && {
+                    outline: "none",
+                    border: "none",
+                    boxShadow: "none",
+                    resize: "none",
+                  }),
                 }}
-              >
-                <Text
-                  style={{
-                    fontSize: 24,
-                    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
-                    color: currentTheme.muted,
-                  }}
-                >
-                  {formatTime(timeRemaining)}
-                </Text>
-              </View>
-
-              {/* Zone d'écriture plein écran */}
-              <TouchableOpacity
-                style={{
-                  flex: 1,
-                  justifyContent: "center",
-                  alignItems: "center",
-                  paddingHorizontal: 40,
-                  paddingVertical: 60,
+                value={text}
+                onChangeText={setText}
+                placeholder=""
+                multiline
+                autoCorrect={false}
+                spellCheck={false}
+                autoCapitalize="none"
+                scrollEnabled={true}
+                selectionColor={currentTheme.accent + "40"}
+                underlineColorAndroid="transparent"
+                // ✅ Focus automatique quand vide
+                onLayout={() => {
+                  if (text.trim() === "") {
+                    setTimeout(() => textInputRef.current?.focus(), 100);
+                  }
                 }}
-                onPress={handleFocusDoubleTap}
-                activeOpacity={1}
-              >
-                <TextInput
-                  ref={textInputRef}
-                  key={`focus-${fontSize}-${selectedFont}`}
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    color: currentTheme.text,
-                    fontSize: fontSize + 4,
-                    lineHeight: (fontSize + 4) * 1.6,
-                    fontFamily: selectedFont,
-                    textAlign: "center",
-                    textAlignVertical: "center",
-                    borderWidth: 0,
-                    borderColor: "transparent",
-                    ...(Platform.OS === "web" && {
-                      outline: "none",
-                      border: "none",
-                      boxShadow: "none",
-                    }),
-                  }}
-                  value={text}
-                  onChangeText={setText}
-                  placeholder={placeholder}
-                  placeholderTextColor={currentTheme.muted}
-                  multiline
-                  autoCorrect={false}
-                  spellCheck={false}
-                  autoCapitalize="none"
-                  scrollEnabled={true}
-                  selectionColor={currentTheme.accent + "40"}
-                  underlineColorAndroid="transparent"
-                />
-              </TouchableOpacity>
-
-              {/* Indicateur de session en bas */}
-              <View
-                style={{
-                  position: "absolute",
-                  bottom: 40,
-                  left: 0,
-                  right: 0,
-                  alignItems: "center",
-                  zIndex: 40,
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 14,
-                    color: currentTheme.muted,
-                  }}
-                >
-                  ● Session en cours • {wordCount} mot{wordCount > 1 ? "s" : ""}
-                </Text>
-              </View>
+              />
             </TouchableOpacity>
+
+            {/* Indicateur de session en bas */}
+            <View
+              style={{
+                position: "absolute",
+                bottom: 40,
+                left: 0,
+                right: 0,
+                alignItems: "center",
+                zIndex: 40,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: currentTheme.muted,
+                }}
+              >
+                ● Session en cours • {wordCount} mot{wordCount > 1 ? "s" : ""}
+              </Text>
+            </View>
 
             {/* Contrôles révélés */}
             {showFocusControls && (
@@ -759,6 +795,7 @@ export default function MainPage() {
                       fontSize: fontSize,
                       lineHeight: fontSize * 1.6,
                       fontFamily: selectedFont,
+                      textAlign: "left", // ✅ AJOUTÉ - Alignement à gauche
                       borderWidth: 0,
                       borderColor: "transparent",
                       // Styles spécifiques pour supprimer bordure web
@@ -857,9 +894,9 @@ export default function MainPage() {
                   {selectedFontName}
                 </Text>
 
-                {/* Bouton dark mode */}
+                {/* Bouton thèmes */}
                 <TouchableOpacity
-                  onPress={toggleDarkMode}
+                  onPress={() => setShowThemeSelector(true)}
                   style={mainPageStyles.footerButton}
                 >
                   <Text
@@ -868,7 +905,7 @@ export default function MainPage() {
                       { color: currentTheme.textSecondary },
                     ]}
                   >
-                    {isDarkMode ? "☀️" : "🌙"}
+                    🎨
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -954,6 +991,8 @@ export default function MainPage() {
             />
           )}
         </View>
+        
+        {/* ✅ Modal de prévisualisation */}
         <PreviewModal
           visible={isPreviewModalVisible}
           entry={previewEntry}
@@ -962,6 +1001,18 @@ export default function MainPage() {
           onLoadEntry={loadEntry}
           onShare={shareEntry}
           isFromTrash={previewEntry?.isInTrash || false}
+        />
+        
+        {/* ✅ Sélecteur de thème */}
+        <ThemeSelector
+          visible={showThemeSelector}
+          onClose={() => setShowThemeSelector(false)}
+          currentTheme={currentTheme}
+          currentThemeName={currentThemeName}
+          isDarkMode={isDarkMode}
+          onThemeChange={changeTheme}
+          onToggleDarkMode={toggleDarkMode}
+          getThemesList={getThemesList}
         />
       </SafeAreaView>
     </Provider>
