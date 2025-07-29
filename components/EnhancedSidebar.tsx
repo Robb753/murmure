@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+// components/EnhancedSidebar.tsx - Version finale corrigée
+import React, { useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -11,6 +12,10 @@ import { Menu } from "react-native-paper";
 import * as Haptics from "expo-haptics";
 import { MurmureEntry } from "@/app/lib/storage";
 import { sidebarStyles } from "@/styles";
+import { useSearch } from "@/hooks/useSearch";
+import { SearchBar } from "@/components/SearchBar";
+import { HighlightedText } from "@/components/HighlightedText";
+import { formatEntryDate, getDateColorIntensity } from "@/utils/dateUtils";
 
 interface EnhancedSidebarProps {
   currentTheme: any;
@@ -39,6 +44,8 @@ const ActiveEntry = ({
   onOpenPreview,
   onShareEntry,
   onMoveToTrash,
+  isSearchResult = false,
+  highlightedPreview,
 }: {
   item: MurmureEntry;
   currentTheme: any;
@@ -47,24 +54,62 @@ const ActiveEntry = ({
   onOpenPreview: (entry: MurmureEntry) => void;
   onShareEntry: (entry: MurmureEntry) => void;
   onMoveToTrash: (entry: MurmureEntry) => void;
+  isSearchResult?: boolean;
+  highlightedPreview?: string;
 }) => {
   const isActive = currentEntry?.id === item.id;
   const isEmpty = item.content.trim().length === 0;
   const [menuVisible, setMenuVisible] = useState(false);
 
+  const formattedDate = formatEntryDate(item.createdAt, {
+    relative: true,
+    showTime: false,
+    fullFormat: false,
+  });
+
+  const dateColorIntensity = getDateColorIntensity(item.createdAt);
+
+  // ✅ Handlers corrigés avec gestion d'erreur et logs
   const handleLoadEntry = () => {
-    onLoadEntry(item);
-    setMenuVisible(false);
+    try {
+      console.log("📂 Chargement entrée:", item.id);
+      onLoadEntry(item);
+      setMenuVisible(false);
+    } catch (error) {
+      console.error("❌ Erreur chargement:", error);
+    }
   };
 
   const handleShareEntry = async () => {
-    await onShareEntry(item);
-    setMenuVisible(false);
+    try {
+      console.log("📤 Partage entrée:", item.id);
+      await onShareEntry(item);
+      setMenuVisible(false);
+    } catch (error) {
+      console.error("❌ Erreur partage:", error);
+    }
   };
 
   const handleMoveToTrash = async () => {
-    await onMoveToTrash(item);
-    setMenuVisible(false);
+    try {
+      console.log("🗑️ Handler suppression appelé pour:", item.id);
+      console.log("Entrée complète:", {
+        id: item.id,
+        date: item.date,
+        previewText: item.previewText,
+        contentLength: item.content?.length || 0,
+        isInTrash: item.isInTrash,
+      });
+
+      // ✅ Appel direct de la fonction
+      await onMoveToTrash(item);
+      setMenuVisible(false);
+
+      console.log("✅ Handler suppression terminé");
+    } catch (error) {
+      console.error("❌ Erreur dans handler suppression:", error);
+      setMenuVisible(false); // Fermer le menu même en cas d'erreur
+    }
   };
 
   const handleLongPress = () => {
@@ -83,26 +128,54 @@ const ActiveEntry = ({
             backgroundColor: isActive
               ? currentTheme.accent + "20"
               : "transparent",
-            borderLeftColor: isActive ? currentTheme.accent : "transparent",
+            borderLeftColor: isActive
+              ? currentTheme.accent
+              : `${currentTheme.accent}${Math.round(dateColorIntensity * 255)
+                  .toString(16)
+                  .padStart(2, "0")}`,
           },
         ]}
         onPress={() => onOpenPreview(item)}
         onLongPress={Platform.OS !== "web" ? handleLongPress : undefined}
       >
         <Text
-          style={[sidebarStyles.sidebarEntryDate, { color: currentTheme.text }]}
-        >
-          {item.date}
-        </Text>
-        <Text
           style={[
-            sidebarStyles.sidebarEntryPreview,
-            { color: currentTheme.textSecondary },
+            sidebarStyles.sidebarEntryDate,
+            {
+              color: currentTheme.text,
+              opacity: 0.7 + dateColorIntensity * 0.3,
+            },
           ]}
-          numberOfLines={2}
         >
-          {isEmpty ? "Session vide" : item.previewText || "Pas de preview"}
+          {formattedDate}
         </Text>
+
+        {isSearchResult && highlightedPreview ? (
+          <HighlightedText
+            text={highlightedPreview}
+            style={{
+              ...sidebarStyles.sidebarEntryPreview,
+              color: currentTheme.textSecondary,
+            }}
+            highlightStyle={{
+              backgroundColor: currentTheme.accent + "30",
+              fontWeight: "600",
+              color: currentTheme.accent,
+            }}
+            numberOfLines={2}
+          />
+        ) : (
+          <Text
+            style={[
+              sidebarStyles.sidebarEntryPreview,
+              { color: currentTheme.textSecondary },
+            ]}
+            numberOfLines={2}
+          >
+            {isEmpty ? "session vide" : item.previewText || "pas de preview"}
+          </Text>
+        )}
+
         <Text
           style={[
             sidebarStyles.sidebarEntryMeta,
@@ -158,22 +231,26 @@ const ActiveEntry = ({
               onOpenPreview(item);
               setMenuVisible(false);
             }}
-            title="👁️ Prévisualiser"
+            title="👁️ prévisualiser"
             titleStyle={{ color: currentTheme.text, fontSize: 14 }}
           />
           <Menu.Item
             onPress={handleLoadEntry}
-            title="📂 Charger"
+            title="📂 charger"
             titleStyle={{ color: currentTheme.text, fontSize: 14 }}
           />
           <Menu.Item
             onPress={handleShareEntry}
-            title="📤 Partager"
+            title="📤 partager"
             titleStyle={{ color: currentTheme.text, fontSize: 14 }}
           />
+          {/* ✅ Menu item corrigé avec logs */}
           <Menu.Item
-            onPress={handleMoveToTrash}
-            title="🗑️ Supprimer"
+            onPress={() => {
+              console.log("🗑️ Menu Item suppression cliqué");
+              handleMoveToTrash();
+            }}
+            title="🗑️ supprimer"
             titleStyle={{ color: "#ef4444", fontSize: 14 }}
           />
         </Menu>
@@ -190,6 +267,8 @@ const TrashEntry = ({
   onRestoreFromTrash,
   onDeletePermanently,
   getDaysUntilDeletion,
+  isSearchResult = false,
+  highlightedPreview,
 }: {
   item: MurmureEntry;
   currentTheme: any;
@@ -198,10 +277,18 @@ const TrashEntry = ({
   onRestoreFromTrash: (entry: MurmureEntry) => void;
   onDeletePermanently: (entry: MurmureEntry) => void;
   getDaysUntilDeletion: (entry: MurmureEntry) => number | null;
+  isSearchResult?: boolean;
+  highlightedPreview?: string;
 }) => {
   const isEmpty = item.content.trim().length === 0;
   const [menuVisible, setMenuVisible] = useState(false);
   const daysLeft = getDaysUntilDeletion(item);
+
+  const formattedDate = formatEntryDate(item.createdAt, {
+    relative: true,
+    showTime: false,
+    fullFormat: false,
+  });
 
   const handleRestore = async () => {
     await onRestoreFromTrash(item);
@@ -244,21 +331,39 @@ const TrashEntry = ({
               { color: currentTheme.text },
             ]}
           >
-            {item.date}
+            {formattedDate}
           </Text>
           <Text style={{ color: "#ef4444", fontSize: 12, marginLeft: 8 }}>
             🗑️
           </Text>
         </View>
-        <Text
-          style={[
-            sidebarStyles.sidebarEntryPreview,
-            { color: currentTheme.textSecondary },
-          ]}
-          numberOfLines={2}
-        >
-          {isEmpty ? "Session vide" : item.previewText || "Pas de preview"}
-        </Text>
+
+        {isSearchResult && highlightedPreview ? (
+          <HighlightedText
+            text={highlightedPreview}
+            style={{
+              ...sidebarStyles.sidebarEntryPreview,
+              color: currentTheme.textSecondary,
+            }}
+            highlightStyle={{
+              backgroundColor: currentTheme.accent + "30",
+              fontWeight: "600",
+              color: currentTheme.accent,
+            }}
+            numberOfLines={2}
+          />
+        ) : (
+          <Text
+            style={[
+              sidebarStyles.sidebarEntryPreview,
+              { color: currentTheme.textSecondary },
+            ]}
+            numberOfLines={2}
+          >
+            {isEmpty ? "session vide" : item.previewText || "pas de preview"}
+          </Text>
+        )}
+
         <View
           style={{
             flexDirection: "row",
@@ -285,7 +390,7 @@ const TrashEntry = ({
             >
               {daysLeft > 0
                 ? `${daysLeft}j restant${daysLeft > 1 ? "s" : ""}`
-                : "Expire aujourd'hui"}
+                : "expire aujourd'hui"}
             </Text>
           )}
         </View>
@@ -334,22 +439,22 @@ const TrashEntry = ({
               onOpenPreview(item);
               setMenuVisible(false);
             }}
-            title="👁️ Prévisualiser"
+            title="👁️ prévisualiser"
             titleStyle={{ color: currentTheme.text, fontSize: 14 }}
           />
           <Menu.Item
             onPress={handleRestore}
-            title="♻️ Restaurer"
+            title="♻️ restaurer"
             titleStyle={{ color: "#10b981", fontSize: 14 }}
           />
           <Menu.Item
             onPress={handleShareEntry}
-            title="📤 Partager"
+            title="📤 partager"
             titleStyle={{ color: currentTheme.text, fontSize: 14 }}
           />
           <Menu.Item
             onPress={handleDeletePermanently}
-            title="💀 Supprimer définitivement"
+            title="💀 supprimer définitivement"
             titleStyle={{ color: "#ef4444", fontSize: 14 }}
           />
         </Menu>
@@ -375,35 +480,87 @@ const EnhancedSidebar = ({
 }: EnhancedSidebarProps) => {
   const [activeTab, setActiveTab] = useState<SidebarTab>("sessions");
 
+  // ✅ Options de recherche intelligentes stables
+  const searchOptions = useMemo(
+    () => ({
+      searchInContent: true,
+      searchInPreview: true,
+      searchInDate: true,
+      caseSensitive: false,
+      minScore: 0.1,
+      minQueryLength: 3, // ✅ Minimum 3 caractères
+      searchWholeWordsOnly: true, // ✅ Recherche par mots complets
+    }),
+    []
+  );
+
+  const sessionsSearch = useSearch(entries, searchOptions);
+  const trashSearch = useSearch(trashEntries, searchOptions);
+
+  // ✅ Obtenir les données à afficher selon l'onglet actif
+  const displayData = useMemo(() => {
+    if (activeTab === "sessions") {
+      const search = sessionsSearch;
+      const hasSearchQuery = search.searchStats.isActive;
+
+      return {
+        data: hasSearchQuery
+          ? search.searchResults.map((result) => ({
+              ...result.entry,
+              isSearchResult: true,
+              highlightedPreview: result.highlightedPreview,
+            }))
+          : entries,
+        search,
+        hasSearchQuery,
+      };
+    } else {
+      const search = trashSearch;
+      const hasSearchQuery = search.searchStats.isActive;
+
+      return {
+        data: hasSearchQuery
+          ? search.searchResults.map((result) => ({
+              ...result.entry,
+              isSearchResult: true,
+              highlightedPreview: result.highlightedPreview,
+            }))
+          : trashEntries,
+        search,
+        hasSearchQuery,
+      };
+    }
+  }, [activeTab, sessionsSearch, trashSearch, entries, trashEntries]);
+
   const handleEmptyTrash = () => {
     if (trashEntries.length === 0) return;
 
     if (Platform.OS === "web") {
       if (
         window.confirm(
-          `Vider la corbeille ?\n\n${trashEntries.length} session${
+          `vider la corbeille ?\n\n${trashEntries.length} session${
             trashEntries.length > 1 ? "s" : ""
           } sera${
             trashEntries.length > 1 ? "ont" : ""
           } définitivement supprimée${
             trashEntries.length > 1 ? "s" : ""
-          }.\n\n⚠️ Cette action est irréversible !`
+          }.\n\n⚠️ cette action est irréversible !`
         )
       ) {
         onEmptyTrash();
       }
     } else {
       Alert.alert(
-        "Vider la corbeille ?",
+        "vider la corbeille ?",
         `${trashEntries.length} session${
           trashEntries.length > 1 ? "s" : ""
         } sera${trashEntries.length > 1 ? "ont" : ""} définitivement supprimée${
           trashEntries.length > 1 ? "s" : ""
-        }.\n\n⚠️ Cette action est irréversible !`,
+        }.\n\n⚠️ cette action est irréversible !`,
         [
-          { text: "Annuler", style: "cancel" },
+          { text: "annuler", style: "cancel" },
           {
-            text: "Vider la corbeille",
+            text: "vider la corbeille",
             style: "destructive",
             onPress: onEmptyTrash,
           },
@@ -412,7 +569,7 @@ const EnhancedSidebar = ({
     }
   };
 
-  const renderActiveEntry = ({ item }: { item: MurmureEntry }) => (
+  const renderActiveEntry = ({ item }: { item: any }) => (
     <ActiveEntry
       item={item}
       currentTheme={currentTheme}
@@ -421,10 +578,12 @@ const EnhancedSidebar = ({
       onOpenPreview={onOpenPreview}
       onShareEntry={onShareEntry}
       onMoveToTrash={onMoveToTrash}
+      isSearchResult={item.isSearchResult}
+      highlightedPreview={item.highlightedPreview}
     />
   );
 
-  const renderTrashEntry = ({ item }: { item: MurmureEntry }) => (
+  const renderTrashEntry = ({ item }: { item: any }) => (
     <TrashEntry
       item={item}
       currentTheme={currentTheme}
@@ -433,6 +592,8 @@ const EnhancedSidebar = ({
       onRestoreFromTrash={onRestoreFromTrash}
       onDeletePermanently={onDeletePermanently}
       getDaysUntilDeletion={getDaysUntilDeletion}
+      isSearchResult={item.isSearchResult}
+      highlightedPreview={item.highlightedPreview}
     />
   );
 
@@ -475,7 +636,7 @@ const EnhancedSidebar = ({
                     : currentTheme.textSecondary,
               }}
             >
-              Sessions ({entries.length})
+              sessions ({entries.length})
             </Text>
           </TouchableOpacity>
 
@@ -502,7 +663,7 @@ const EnhancedSidebar = ({
                     : currentTheme.textSecondary,
               }}
             >
-              🗑️ Corbeille ({trashEntries.length})
+              🗑️ corbeille ({trashEntries.length})
             </Text>
           </TouchableOpacity>
         </View>
@@ -516,9 +677,25 @@ const EnhancedSidebar = ({
         </TouchableOpacity>
       </View>
 
+      {/* ✅ Barre de recherche avec statistiques intelligentes */}
+      <SearchBar
+        currentTheme={currentTheme}
+        searchQuery={displayData.search.searchQuery}
+        onSearchChange={displayData.search.updateSearchQuery}
+        onSearchClear={displayData.search.clearSearch}
+        totalResults={displayData.search.searchStats.totalResults}
+        isSearching={displayData.search.isSearching}
+        searchStats={displayData.search.searchStats}
+        placeholder={
+          activeTab === "sessions"
+            ? "rechercher dans les sessions..."
+            : "rechercher dans la corbeille..."
+        }
+      />
+
       {activeTab === "sessions" ? (
         <FlatList
-          data={entries}
+          data={displayData.data}
           renderItem={renderActiveEntry}
           keyExtractor={(item) => item.id}
           showsVerticalScrollIndicator={true}
@@ -530,14 +707,16 @@ const EnhancedSidebar = ({
           ListEmptyComponent={
             <View style={{ padding: 20, alignItems: "center" }}>
               <Text style={{ color: currentTheme.muted, textAlign: "center" }}>
-                Aucune session
+                {displayData.hasSearchQuery
+                  ? "aucun résultat trouvé"
+                  : "aucune session"}
               </Text>
             </View>
           }
         />
       ) : (
         <View style={{ flex: 1 }}>
-          {trashEntries.length > 0 && (
+          {trashEntries.length > 0 && !displayData.hasSearchQuery && (
             <View
               style={{
                 padding: 16,
@@ -558,14 +737,14 @@ const EnhancedSidebar = ({
                 <Text
                   style={{ color: "white", fontSize: 14, fontWeight: "500" }}
                 >
-                  Vider la corbeille
+                  vider la corbeille
                 </Text>
               </TouchableOpacity>
             </View>
           )}
 
           <FlatList
-            data={trashEntries}
+            data={displayData.data}
             renderItem={renderTrashEntry}
             keyExtractor={(item) => item.id}
             showsVerticalScrollIndicator={true}
@@ -579,7 +758,9 @@ const EnhancedSidebar = ({
                 <Text
                   style={{ color: currentTheme.muted, textAlign: "center" }}
                 >
-                  Corbeille vide
+                  {displayData.hasSearchQuery
+                    ? "aucun résultat trouvé"
+                    : "corbeille vide"}
                 </Text>
               </View>
             }

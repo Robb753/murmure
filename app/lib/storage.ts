@@ -231,7 +231,26 @@ class MurmureStorage {
     const now = new Date();
     const id = `${now.getTime()}-${Math.random().toString(36).substr(2, 9)}`;
     const dateString = format(now, "yyyy-MM-dd-HH-mm-ss");
-    const displayDate = format(now, "MMM d");
+
+    const frenchMonths = [
+      "jan",
+      "fév",
+      "mar",
+      "avr",
+      "mai",
+      "juin",
+      "juil",
+      "août",
+      "sep",
+      "oct",
+      "nov",
+      "déc",
+    ];
+
+    const day = now.getDate().toString().padStart(2, "0");
+    const month = frenchMonths[now.getMonth()];
+    const year = now.getFullYear();
+    const displayDate = `${day} ${month} ${year}`;
 
     return {
       id,
@@ -488,10 +507,18 @@ class MurmureStorage {
         );
       }
 
+      // ✅ Vérifier que l'entrée n'est pas déjà dans la corbeille
+      if (entries[entryIndex].isInTrash) {
+        console.warn(`Entrée ${entryId} déjà dans la corbeille`);
+        return { success: true }; // Pas d'erreur, juste déjà fait
+      }
+
+      // ✅ Mettre à jour l'entrée avec les bonnes propriétés
       entries[entryIndex] = {
         ...entries[entryIndex],
         isInTrash: true,
         deletedAt: new Date(),
+        updatedAt: new Date(), // ✅ Mettre à jour la date de modification
       };
 
       const saveResult = await this.saveEntries(entries);

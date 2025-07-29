@@ -1,3 +1,4 @@
+// app/(tabs)/index.tsx - Version mise à jour
 import React, {
   useState,
   useRef,
@@ -27,8 +28,7 @@ import { useStorage } from "@/hooks/useStorage";
 import { useAudio } from "@/hooks/useAudio";
 import { useAdvancedTheme } from "@/hooks/useAdvancedTheme";
 
-// Import de la nouvelle sidebar
-
+// Import des composants
 import {
   commonStyles,
   mainPageStyles,
@@ -38,6 +38,7 @@ import {
 import { PreviewModal } from "@/components/PreviewModal";
 import ThemeSelector from "@/components/ThemeSelector";
 import { EnhancedSidebar } from "@/components/EnhancedSidebar";
+import { TextSettings } from "@/components/TextSettings";
 
 // Tailles de police disponibles
 const fontSizes = [16, 20, 24, 28, 32, 36, 40];
@@ -124,7 +125,15 @@ export default function MainPage() {
     isPreviewModalVisible,
     openPreview,
     closePreview,
+    // ✅ Nouvelles fonctions pour le traitement du texte
+    textOptions,
+    toggleTextOption,
+    applyTextProcessing,
+    getTextStats,
   } = useStorage();
+
+  // ✅ État pour les paramètres de texte
+  const [showTextSettings, setShowTextSettings] = useState(false);
 
   const {
     timeRemaining,
@@ -168,11 +177,11 @@ export default function MainPage() {
   // Placeholders épurés
   const placeholders = useMemo(
     () => [
-      "Écris tes pensées...",
-      "Que ressens-tu ?",
-      "Laisse couler tes idées...",
-      "Commence par n'importe quoi...",
-      "Tes murmures du moment...",
+      "écris tes pensées...",
+      "que ressens-tu ?",
+      "laisse couler tes idées...",
+      "commence par n'importe quoi...",
+      "tes murmures du moment...",
     ],
     []
   );
@@ -398,8 +407,8 @@ export default function MainPage() {
                     }}
                   >
                     {Platform.OS === "web"
-                      ? "Double-clic ou Échap pour les contrôles • Ctrl+Espace pour arrêter"
-                      : "Double-tap pour les contrôles"}
+                      ? "double-clic ou échap pour les contrôles • ctrl+espace pour arrêter"
+                      : "double-tap pour les contrôles"}
                   </Text>
                 </View>
               </Animated.View>
@@ -436,82 +445,82 @@ export default function MainPage() {
               onPress={handleFocusDoubleTap}
               activeOpacity={1}
             >
-              <view
-    style={{
-      width: "100%",
-      maxWidth: 1150,
-      height: "100%",
-      position: "relative",
-    }}
-  >
-              {/* Placeholder centré flottant */}
-              {text.trim() === "" && (
-                <View
-                  style={{
-                    position: "absolute",
-                    top: "50%",
-                    left: 40,
-                    right: 40,
-                    transform: [{ translateY: -20 }],
-                    alignItems: "center",
-                    pointerEvents: "none",
-                    zIndex: 1,
-                  }}
-                >
-                  <Text
-                    style={{
-                      color: currentTheme.muted,
-                      fontSize: fontSize + 4,
-                      fontFamily: selectedFont,
-                      textAlign: "center",
-                      opacity: 0.7,
-                    }}
-                  >
-                    {placeholder}
-                  </Text>
-                </View>
-              )}
-
-              <TextInput
-                ref={textInputRef}
-                key={`focus-${fontSize}-${selectedFont}`}
+              <View
                 style={{
                   width: "100%",
+                  maxWidth: 1150,
                   height: "100%",
-                  color: currentTheme.text,
-                  fontSize: fontSize + 4,
-                  lineHeight: (fontSize + 4) * 1.6,
-                  fontFamily: selectedFont,
-                  textAlign: "left",
-                  textAlignVertical: "top",
-                  borderWidth: 0,
-                  borderColor: "transparent",
-                  backgroundColor: "transparent",
-                  ...(Platform.OS === "web" && {
-                    outline: "none",
-                    border: "none",
-                    boxShadow: "none",
-                    resize: "none",
-                  }),
+                  position: "relative",
                 }}
-                value={text}
-                onChangeText={setText}
-                placeholder=""
-                multiline
-                autoCorrect={false}
-                spellCheck={false}
-                autoCapitalize="none"
-                scrollEnabled={true}
-                selectionColor={currentTheme.accent + "40"}
-                underlineColorAndroid="transparent"
-                // ✅ Focus automatique quand vide
-                onLayout={() => {
-                  if (text.trim() === "") {
-                    setTimeout(() => textInputRef.current?.focus(), 100);
-                  }
-                }}
-              />
-              </view>
+              >
+                {/* Placeholder centré flottant */}
+                {text.trim() === "" && (
+                  <View
+                    style={{
+                      position: "absolute",
+                      top: "50%",
+                      left: 40,
+                      right: 40,
+                      transform: [{ translateY: -20 }],
+                      alignItems: "center",
+                      pointerEvents: "none",
+                      zIndex: 1,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: currentTheme.muted,
+                        fontSize: fontSize + 4,
+                        fontFamily: selectedFont,
+                        textAlign: "center",
+                        opacity: 0.7,
+                      }}
+                    >
+                      {placeholder}
+                    </Text>
+                  </View>
+                )}
+
+                <TextInput
+                  ref={textInputRef}
+                  key={`focus-${fontSize}-${selectedFont}`}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    color: currentTheme.text,
+                    fontSize: fontSize + 4,
+                    lineHeight: (fontSize + 4) * 1.6,
+                    fontFamily: selectedFont,
+                    textAlign: "left",
+                    textAlignVertical: "top",
+                    borderWidth: 0,
+                    borderColor: "transparent",
+                    backgroundColor: "transparent",
+                    ...(Platform.OS === "web" && {
+                      outline: "none",
+                      border: "none",
+                      boxShadow: "none",
+                      resize: "none",
+                    }),
+                  }}
+                  value={text}
+                  onChangeText={setText}
+                  placeholder=""
+                  multiline
+                  autoCorrect={false}
+                  spellCheck={false}
+                  autoCapitalize="none"
+                  scrollEnabled={true}
+                  selectionColor={currentTheme.accent + "40"}
+                  underlineColorAndroid="transparent"
+                  // ✅ Focus automatique quand vide
+                  onLayout={() => {
+                    if (text.trim() === "") {
+                      setTimeout(() => textInputRef.current?.focus(), 100);
+                    }
+                  }}
+                />
+              </View>
             </TouchableOpacity>
 
             {/* Indicateur de session en bas */}
@@ -531,7 +540,8 @@ export default function MainPage() {
                   color: currentTheme.muted,
                 }}
               >
-                ● Session en cours • {wordCount} mot{wordCount > 1 ? "s" : ""}
+                ● session en cours • {wordCount} mot{wordCount > 1 ? "s" : ""}
+                {textOptions.autoLowercase && " • majuscules supprimées"}
               </Text>
             </View>
 
@@ -571,7 +581,7 @@ export default function MainPage() {
                       marginBottom: 16,
                     }}
                   >
-                    Session en cours
+                    session en cours
                   </Text>
 
                   <Text
@@ -608,7 +618,7 @@ export default function MainPage() {
                           fontWeight: "500",
                         }}
                       >
-                        Arrêter
+                        arrêter
                       </Text>
                     </TouchableOpacity>
 
@@ -632,7 +642,7 @@ export default function MainPage() {
                           fontWeight: "500",
                         }}
                       >
-                        Continuer
+                        continuer
                       </Text>
                     </TouchableOpacity>
                   </View>
@@ -645,7 +655,7 @@ export default function MainPage() {
                       textAlign: "center",
                     }}
                   >
-                    Se cache automatiquement dans 4 secondes
+                    se cache automatiquement dans 4 secondes
                   </Text>
                 </View>
               </View>
@@ -690,7 +700,7 @@ export default function MainPage() {
                     { color: currentTheme.text },
                   ]}
                 >
-                  + Nouveau
+                  + nouveau
                 </Text>
               </TouchableOpacity>
 
@@ -787,7 +797,7 @@ export default function MainPage() {
                     { color: currentTheme.text },
                   ]}
                 >
-                  Historique
+                  historique
                 </Text>
               </TouchableOpacity>
             </View>
@@ -878,6 +888,17 @@ export default function MainPage() {
                 >
                   {wordCount} mot{wordCount > 1 ? "s" : ""}
                 </Text>
+                {/* ✅ Indicateur de traitement des majuscules */}
+                {textOptions.autoLowercase && (
+                  <Text
+                    style={[
+                      mainPageStyles.wordCount,
+                      { color: currentTheme.muted, fontSize: 12, marginTop: 2 },
+                    ]}
+                  >
+                    • majuscules supprimées
+                  </Text>
+                )}
               </View>
 
               <View style={mainPageStyles.footerCenter}>
@@ -888,12 +909,39 @@ export default function MainPage() {
                       { color: currentTheme.accent },
                     ]}
                   >
-                    ● Session en cours • {formatTime(timeRemaining)}
+                    ● session en cours • {formatTime(timeRemaining)}
                   </Text>
                 )}
               </View>
 
               <View style={mainPageStyles.footerRight}>
+                {/* ✅ Bouton paramètres de texte 
+                <TouchableOpacity
+                  onPress={() => setShowTextSettings(true)}
+                  style={[
+                    mainPageStyles.footerButton,
+                    {
+                      backgroundColor: textOptions.autoLowercase
+                        ? currentTheme.accent + "20"
+                        : "transparent",
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      mainPageStyles.footerButtonText,
+                      {
+                        color: textOptions.autoLowercase
+                          ? currentTheme.accent
+                          : currentTheme.textSecondary,
+                      },
+                    ]}
+                  >
+                    🔤
+                  </Text>
+                </TouchableOpacity>
+                */}
+
                 {/* Sélecteur taille de texte */}
                 <TouchableOpacity
                   onPress={toggleFontSizeMenu}
@@ -920,7 +968,7 @@ export default function MainPage() {
                       { color: currentTheme.textSecondary },
                     ]}
                   >
-                    Aa (random)
+                    aa (random)
                   </Text>
                 </TouchableOpacity>
 
@@ -976,7 +1024,7 @@ export default function MainPage() {
                 <Text
                   style={[modalStyles.modalTitle, { color: currentTheme.text }]}
                 >
-                  Taille du texte
+                  taille du texte
                 </Text>
                 {fontSizes.map((size) => (
                   <TouchableOpacity
@@ -1054,6 +1102,17 @@ export default function MainPage() {
           onThemeChange={changeTheme}
           onToggleDarkMode={toggleDarkMode}
           getThemesList={getThemesList}
+        />
+
+        {/* ✅ Paramètres de traitement du texte */}
+        <TextSettings
+          visible={showTextSettings}
+          onClose={() => setShowTextSettings(false)}
+          currentTheme={currentTheme}
+          textOptions={textOptions}
+          onToggleOption={toggleTextOption}
+          onApplyProcessing={applyTextProcessing}
+          getTextStats={getTextStats}
         />
       </SafeAreaView>
     </Provider>

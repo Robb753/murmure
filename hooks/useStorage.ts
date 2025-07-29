@@ -1,7 +1,9 @@
+// hooks/useStorage.ts - Version mise à jour
 import MurmureStorage, { MurmureEntry, StorageResult } from "@/app/lib/storage";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useErrorHandler } from "./useErrorHandler";
 import { useEntryActions } from "./useEntryActions";
+import { useTextProcessor } from "./useTextProcessor";
 
 // Types existants
 interface StorageState {
@@ -12,6 +14,14 @@ interface StorageState {
   wordCount: number;
   isLoading: boolean;
   error: string | null;
+}
+
+// Nouvelles options pour le traitement du texte
+interface TextOptions {
+  autoLowercase: boolean;
+  preserveAcronyms: boolean;
+  preserveStartOfSentence: boolean;
+  preserveProperNouns: boolean;
 }
 
 export const useStorage = () => {
@@ -26,6 +36,14 @@ export const useStorage = () => {
     error: null,
   });
 
+  // Options de traitement du texte (configurables)
+  const [textOptions, setTextOptions] = useState<TextOptions>({
+    autoLowercase: true, // Activé par défaut pour l'écriture libre
+    preserveAcronyms: true,
+    preserveStartOfSentence: false, // Désactivé pour une écriture vraiment libre
+    preserveProperNouns: false, // Désactivé pour une écriture vraiment libre
+  });
+
   // États séparés pour la prévisualisation
   const [previewEntry, setPreviewEntry] = useState<MurmureEntry | null>(null);
   const [isPreviewModalVisible, setIsPreviewModalVisible] = useState(false);
@@ -33,6 +51,7 @@ export const useStorage = () => {
   // Refs
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastSavedContentRef = useRef<string>("");
+  const previousTextRef = useRef<string>("");
 
   // Hooks utilitaires
   const { withErrorHandling } = useErrorHandler({
@@ -40,6 +59,10 @@ export const useStorage = () => {
     logToConsole: true,
     criticalErrorsOnly: false,
   });
+
+  // Hook de traitement du texte
+  const { processText, processTextIncremental, getProcessingStats } =
+    useTextProcessor(textOptions);
 
   // Fonctions utilitaires mémorisées
   const sortEntriesByDate = useCallback(
@@ -81,10 +104,13 @@ export const useStorage = () => {
       ]);
 
       if (entry && allEntries && trashEntries) {
+        // Traiter le contenu existant si nécessaire
+        const processedContent = processText(entry.content);
+
         setState((prev) => ({
           ...prev,
           currentEntry: entry,
-          text: entry.content,
+          text: processedContent,
           wordCount: entry.wordCount,
           entries: sortEntriesByDate(allEntries),
           trashEntries: sortTrashByDeletion(trashEntries),
@@ -92,7 +118,15 @@ export const useStorage = () => {
           error: null,
         }));
 
-        lastSavedContentRef.current = entry.content;
+        lastSavedContentRef.current = processedContent;
+        previousTextRef.current = processedContent;
+
+        // Si le contenu a été modifié par le traitement, sauvegarder
+        if (processedContent !== entry.content) {
+          const updatedEntry = { ...entry, content: processedContent };
+          MurmureStorage.saveEntry(updatedEntry);
+        }
+
         MurmureStorage.saveCurrentEntryId(entry.id);
 
         return { success: true };
@@ -105,7 +139,7 @@ export const useStorage = () => {
       setState((prev) => ({ ...prev, isLoading: false, error: errorMessage }));
       return { success: false, error: errorMessage };
     }
-  }, [withErrorHandling, sortEntriesByDate, sortTrashByDeletion]);
+  }, [withErrorHandling, sortEntriesByDate, sortTrashByDeletion, processText]);
 
   // Callback pour rechargement des données
   const handleDataChanged = useCallback(() => {
@@ -115,18 +149,21 @@ export const useStorage = () => {
   // Callback pour changement d'entrée courante
   const handleCurrentEntryChanged = useCallback(
     (entry: MurmureEntry | null) => {
+      const processedContent = entry ? processText(entry.content) : "";
+
       setState((prev) => ({
         ...prev,
         currentEntry: entry,
-        text: entry?.content || "",
+        text: processedContent,
         error: null,
       }));
 
       if (entry) {
-        lastSavedContentRef.current = entry.content;
+        lastSavedContentRef.current = processedContent;
+        previousTextRef.current = processedContent;
       }
     },
-    []
+    [processText]
   );
 
   // Hook d'actions sur les entrées
@@ -282,10 +319,42 @@ export const useStorage = () => {
     setIsPreviewModalVisible(false);
   }, []);
 
-  // Fonction pour mettre à jour le texte
-  const setText = useCallback((newText: string) => {
-    setState((prev) => ({ ...prev, text: newText }));
+  // ✅ Fonction pour mettre à jour le texte AVEC traitement des majuscules
+  const setText = useCallback(
+    (newText: string) => {
+      // Traitement intelligent du texte avec optimisation pour les gros textes
+      const processedText = processTextIncremental(
+        newText,
+        previousTextRef.current
+      );
+
+      setState((prev) => ({ ...prev, text: processedText }));
+      previousTextRef.current = processedText;
+    },
+    [processTextIncremental]
+  );
+
+  // Fonction pour basculer les options de traitement du texte
+  const toggleTextOption = useCallback((option: keyof TextOptions) => {
+    setTextOptions((prev) => ({
+      ...prev,
+      [option]: !prev[option],
+    }));
   }, []);
+
+  // Fonction pour appliquer le traitement au texte courant
+  const applyTextProcessing = useCallback(() => {
+    if (state.text) {
+      const processedText = processText(state.text);
+      setState((prev) => ({ ...prev, text: processedText }));
+      previousTextRef.current = processedText;
+    }
+  }, [state.text, processText]);
+
+  // Fonction pour obtenir les statistiques de traitement
+  const getTextStats = useCallback(() => {
+    return getProcessingStats(state.text);
+  }, [state.text, getProcessingStats]);
 
   // Effet pour le compteur de mots (optimisé)
   const wordCount = useMemo(() => {
@@ -363,6 +432,12 @@ export const useStorage = () => {
     restoreFromTrash,
     deleteEntryPermanently,
     emptyTrash,
+
+    // ✅ Nouvelles fonctions pour le traitement du texte
+    textOptions,
+    toggleTextOption,
+    applyTextProcessing,
+    getTextStats,
 
     // Utilitaires
     getDaysUntilDeletion: entryActions.getDaysUntilDeletion,
