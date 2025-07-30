@@ -38,7 +38,7 @@ export const useEntryActions = ({
           return false;
         }
 
-        // ✅ Appel direct avec gestion d'erreur améliorée
+        // Appel direct avec gestion d'erreur améliorée
         const result = await MurmureStorage.moveToTrash(entry.id);
 
         if (result.success) {
@@ -47,7 +47,6 @@ export const useEntryActions = ({
           return true;
         } else {
           console.error("❌ Échec déplacement:", result.error);
-          // Afficher l'erreur à l'utilisateur si nécessaire
           return false;
         }
       } catch (error) {
@@ -181,7 +180,7 @@ export const useEntryActions = ({
     []
   );
 
-  // Charger une entrée (inchangé)
+  // ✅ Charger une entrée - version corrigée pour éviter les créations automatiques
   const loadEntry = useCallback(
     async (
       entry: MurmureEntry,
@@ -190,13 +189,16 @@ export const useEntryActions = ({
       saveCurrentFn?: () => Promise<StorageResult>
     ): Promise<boolean> => {
       try {
-        // Sauvegarder l'entrée courante si modifiée
+        console.log("📂 Chargement de l'entrée:", entry.id);
+
+        // ✅ Sauvegarder l'entrée courante SEULEMENT si elle a du contenu
         if (
           currentEntry &&
           currentText.trim() &&
           currentText !== currentEntry.content &&
           saveCurrentFn
         ) {
+          console.log("💾 Sauvegarde avant chargement");
           const result = await saveCurrentFn();
           if (!result.success) {
             console.warn("Échec sauvegarde avant chargement:", result.error);
@@ -212,6 +214,7 @@ export const useEntryActions = ({
           console.warn("⚠️ Échec sauvegarde ID:", saveIdResult.error);
         }
 
+        console.log("✅ Entrée chargée avec succès");
         return true;
       } catch (error) {
         console.error("Erreur chargement entrée:", error);
@@ -221,7 +224,7 @@ export const useEntryActions = ({
     [onCurrentEntryChanged]
   );
 
-  // Créer une nouvelle entrée (inchangé)
+  // ✅ Créer une nouvelle entrée - version corrigée
   const createNewEntry = useCallback(
     async (
       currentEntry: MurmureEntry | null,
@@ -229,8 +232,11 @@ export const useEntryActions = ({
       saveCurrentFn?: () => Promise<StorageResult>
     ): Promise<MurmureEntry | null> => {
       try {
-        // Sauvegarder l'entrée courante si nécessaire
+        console.log("🆕 Création d'une nouvelle entrée...");
+
+        // ✅ Sauvegarder l'entrée courante SEULEMENT si elle a du contenu
         if (currentEntry && currentText.trim() && saveCurrentFn) {
+          console.log("💾 Sauvegarde avant création nouvelle entrée");
           const result = await saveCurrentFn();
           if (!result.success) {
             console.warn(
@@ -240,12 +246,14 @@ export const useEntryActions = ({
           }
         }
 
+        // ✅ Utiliser la nouvelle méthode qui ne sauvegarde pas automatiquement
         const result = await withErrorHandling(
-          () => MurmureStorage.getTodayEntryOrCreate(),
+          () => MurmureStorage.startNewSession(),
           "création nouvelle entrée"
         );
 
         if (result) {
+          console.log("✅ Nouvelle entrée créée:", result.id);
           onCurrentEntryChanged?.(result);
           onDataChanged?.();
           return result;

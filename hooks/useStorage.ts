@@ -1,11 +1,11 @@
-// hooks/useStorage.ts - Version mise à jour
+// hooks/useStorage.ts - Version corrigée
 import MurmureStorage, { MurmureEntry, StorageResult } from "@/app/lib/storage";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useErrorHandler } from "./useErrorHandler";
 import { useEntryActions } from "./useEntryActions";
 import { useTextProcessor } from "./useTextProcessor";
 
-// Types existants
+// Types existants (inchangés)
 interface StorageState {
   currentEntry: MurmureEntry | null;
   entries: MurmureEntry[];
@@ -16,7 +16,6 @@ interface StorageState {
   error: string | null;
 }
 
-// Nouvelles options pour le traitement du texte
 interface TextOptions {
   autoLowercase: boolean;
   preserveAcronyms: boolean;
@@ -25,7 +24,7 @@ interface TextOptions {
 }
 
 export const useStorage = () => {
-  // État principal
+  // États principaux
   const [state, setState] = useState<StorageState>({
     currentEntry: null,
     entries: [],
@@ -36,22 +35,21 @@ export const useStorage = () => {
     error: null,
   });
 
-  // Options de traitement du texte (configurables)
   const [textOptions, setTextOptions] = useState<TextOptions>({
-    autoLowercase: true, // Activé par défaut pour l'écriture libre
+    autoLowercase: true,
     preserveAcronyms: true,
-    preserveStartOfSentence: false, // Désactivé pour une écriture vraiment libre
-    preserveProperNouns: false, // Désactivé pour une écriture vraiment libre
+    preserveStartOfSentence: false,
+    preserveProperNouns: false,
   });
 
-  // États séparés pour la prévisualisation
   const [previewEntry, setPreviewEntry] = useState<MurmureEntry | null>(null);
   const [isPreviewModalVisible, setIsPreviewModalVisible] = useState(false);
 
-  // Refs
+  // Refs pour éviter les sauvegardes inutiles
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastSavedContentRef = useRef<string>("");
   const previousTextRef = useRef<string>("");
+  const isFirstLoadRef = useRef(true);
 
   // Hooks utilitaires
   const { withErrorHandling } = useErrorHandler({
@@ -60,7 +58,6 @@ export const useStorage = () => {
     criticalErrorsOnly: false,
   });
 
-  // Hook de traitement du texte
   const { processText, processTextIncremental, getProcessingStats } =
     useTextProcessor(textOptions);
 
@@ -79,20 +76,18 @@ export const useStorage = () => {
     []
   );
 
-  // Chargement de données simplifié
+  // ✅ CORRECTION PRINCIPALE: Chargement sans création automatique
   const loadData = useCallback(async (): Promise<StorageResult> => {
     setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
     try {
+      console.log("🔄 Chargement des données...");
+
       // Nettoyage automatique
       await MurmureStorage.initializeAutoCleanup();
 
-      // Chargement parallèle des données
-      const [entry, allEntries, trashEntries] = await Promise.all([
-        withErrorHandling(
-          () => MurmureStorage.getTodayEntryOrCreate(),
-          "création entrée du jour"
-        ),
+      // Chargement des entrées existantes
+      const [allEntries, trashEntries] = await Promise.all([
         withErrorHandling(
           () => MurmureStorage.loadActiveEntries(),
           "chargement entrées"
@@ -103,40 +98,94 @@ export const useStorage = () => {
         ),
       ]);
 
-      if (entry && allEntries && trashEntries) {
-        // Traiter le contenu existant si nécessaire
-        const processedContent = processText(entry.content);
-
+      if (!allEntries || !trashEntries) {
         setState((prev) => ({
           ...prev,
-          currentEntry: entry,
-          text: processedContent,
-          wordCount: entry.wordCount,
-          entries: sortEntriesByDate(allEntries),
-          trashEntries: sortTrashByDeletion(trashEntries),
           isLoading: false,
-          error: null,
+          error: "Erreur de chargement des données",
         }));
-
-        lastSavedContentRef.current = processedContent;
-        previousTextRef.current = processedContent;
-
-        // Si le contenu a été modifié par le traitement, sauvegarder
-        if (processedContent !== entry.content) {
-          const updatedEntry = { ...entry, content: processedContent };
-          MurmureStorage.saveEntry(updatedEntry);
-        }
-
-        MurmureStorage.saveCurrentEntryId(entry.id);
-
-        return { success: true };
+        return { success: false, error: "Erreur de chargement des données" };
       }
 
-      return { success: false, error: "Échec du chargement des données" };
+      console.log(
+        `📊 Entrées trouvées: ${allEntries.length} actives, ${trashEntries.length} supprimées`
+      );
+
+      let currentEntry: MurmureEntry | null = null;
+      let textContent = "";
+
+      // ✅ Première fois: créer une entrée de bienvenue si aucune entrée
+      if (isFirstLoadRef.current && allEntries.length === 0) {
+        console.log(
+          "🆕 Première utilisation - création de l'entrée de bienvenue"
+        );
+        const firstEntryResult = await withErrorHandling(
+          () => MurmureStorage.getOrCreateFirstEntry(),
+          "création première entrée"
+        );
+
+        if (firstEntryResult) {
+          currentEntry = firstEntryResult;
+          textContent = processText(firstEntryResult.content);
+
+          // Recharger les entrées pour inclure la nouvelle
+          const updatedEntries = await withErrorHandling(
+            () => MurmureStorage.loadActiveEntries(),
+            "rechargement entrées"
+          );
+          if (updatedEntries) {
+            allEntries.push(...updatedEntries);
+          }
+        }
+      }
+      // ✅ Chargement normal: essayer de récupérer l'entrée courante
+      else if (allEntries.length > 0) {
+        const currentEntryResult = await withErrorHandling(
+          () => MurmureStorage.getCurrentEntryOrNull(),
+          "chargement entrée courante"
+        );
+
+        if (currentEntryResult) {
+          currentEntry = currentEntryResult;
+          textContent = currentEntry ? processText(currentEntry.content) : "";
+        } else {
+          // Pas d'entrée courante définie, prendre la plus récente
+          currentEntry = allEntries[0] || null;
+          textContent = currentEntry ? processText(currentEntry.content) : "";
+        }
+      }
+      // ✅ Cas où il n'y a aucune entrée et ce n'est pas le premier chargement
+      // Ne rien faire, laisser l'état vide
+
+      setState((prev) => ({
+        ...prev,
+        currentEntry,
+        text: textContent,
+        wordCount: currentEntry?.wordCount || 0,
+        entries: sortEntriesByDate(allEntries),
+        trashEntries: sortTrashByDeletion(trashEntries),
+        isLoading: false,
+        error: null,
+      }));
+
+      // Sauvegarder les références pour éviter les boucles
+      lastSavedContentRef.current = textContent;
+      previousTextRef.current = textContent;
+
+      // Sauvegarder l'ID de l'entrée courante si elle existe
+      if (currentEntry) {
+        MurmureStorage.saveCurrentEntryId(currentEntry.id);
+      }
+
+      isFirstLoadRef.current = false;
+      console.log("✅ Chargement terminé");
+
+      return { success: true };
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Erreur de chargement";
       setState((prev) => ({ ...prev, isLoading: false, error: errorMessage }));
+      console.error("❌ Erreur lors du chargement:", error);
       return { success: false, error: errorMessage };
     }
   }, [withErrorHandling, sortEntriesByDate, sortTrashByDeletion, processText]);
@@ -172,13 +221,22 @@ export const useStorage = () => {
     onCurrentEntryChanged: handleCurrentEntryChanged,
   });
 
-  // Sauvegarder avec la nouvelle API
+  // ✅ Sauvegarder seulement si il y a du contenu
   const saveCurrentEntry = useCallback(async (): Promise<StorageResult> => {
     if (!state.currentEntry) {
       return { success: false, error: "Aucune entrée courante" };
     }
 
     try {
+      // ✅ Éviter les sauvegardes d'entrées vides
+      if (
+        state.text.trim() === "" &&
+        state.currentEntry.content.trim() === ""
+      ) {
+        console.log("📝 Éviter la sauvegarde d'une entrée vide");
+        return { success: true };
+      }
+
       const updatedEntry = { ...state.currentEntry, content: state.text };
 
       // Éviter les sauvegardes inutiles
@@ -186,6 +244,7 @@ export const useStorage = () => {
         return { success: true };
       }
 
+      console.log("💾 Sauvegarde de l'entrée:", updatedEntry.id);
       const result = await MurmureStorage.saveEntry(updatedEntry);
 
       if (result.success && result.data) {
@@ -221,19 +280,53 @@ export const useStorage = () => {
     }
   }, [state.currentEntry, state.text, sortEntriesByDate, withErrorHandling]);
 
-  // Actions simplifiées utilisant les hooks utilitaires
+  // ✅ CORRECTION: Créer vraiment une nouvelle session
   const createNewSession = useCallback(async (): Promise<StorageResult> => {
-    const newEntry = await entryActions.createNewEntry(
-      state.currentEntry,
-      state.text,
-      saveCurrentEntry
-    );
+    console.log("🆕 Création d'une nouvelle session...");
 
-    return newEntry
-      ? { success: true }
-      : { success: false, error: "Impossible de créer une nouvelle session" };
-  }, [entryActions, state.currentEntry, state.text, saveCurrentEntry]);
+    try {
+      // Sauvegarder l'entrée courante si elle a du contenu
+      if (state.currentEntry && state.text.trim()) {
+        console.log("💾 Sauvegarde de la session actuelle avant création");
+        await saveCurrentEntry();
+      }
 
+      // Créer une nouvelle entrée
+      const newEntryResult = await withErrorHandling(
+        () => MurmureStorage.startNewSession(),
+        "création nouvelle session"
+      );
+
+      if (newEntryResult) {
+        console.log("✅ Nouvelle session créée:", newEntryResult.id);
+
+        // Mettre à jour l'état avec la nouvelle entrée
+        setState((prev) => ({
+          ...prev,
+          currentEntry: newEntryResult,
+          text: "",
+          wordCount: 0,
+          error: null,
+        }));
+
+        // Réinitialiser les références
+        lastSavedContentRef.current = "";
+        previousTextRef.current = "";
+
+        return { success: true };
+      }
+
+      return {
+        success: false,
+        error: "Impossible de créer une nouvelle session",
+      };
+    } catch (error) {
+      console.error("❌ Erreur création session:", error);
+      return { success: false, error: "Erreur lors de la création" };
+    }
+  }, [state.currentEntry, state.text, saveCurrentEntry, withErrorHandling]);
+
+  // ✅ Actions simplifiées avec corrections
   const loadEntry = useCallback(
     async (entry: MurmureEntry): Promise<StorageResult> => {
       const success = await entryActions.loadEntry(
@@ -250,23 +343,34 @@ export const useStorage = () => {
     [entryActions, state.currentEntry, state.text, saveCurrentEntry]
   );
 
-  // Actions de corbeille simplifiées
+  // ✅ Correction de la suppression pour éviter la création automatique
   const moveEntryToTrash = useCallback(
     async (entry: MurmureEntry): Promise<StorageResult> => {
+      console.log("🗑️ Suppression de l'entrée:", entry.id);
+
       const success = await entryActions.moveToTrash(entry);
 
-      // Si c'est l'entrée courante, créer une nouvelle session
-      if (success && state.currentEntry?.id === entry.id) {
-        await createNewSession();
+      if (success) {
+        // Si c'est l'entrée courante, créer une nouvelle session
+        if (state.currentEntry?.id === entry.id) {
+          console.log(
+            "🔄 Entrée courante supprimée, création d'une nouvelle session"
+          );
+          await createNewSession();
+        } else {
+          // Sinon juste recharger les données
+          await handleDataChanged();
+        }
       }
 
       return success
         ? { success: true }
         : { success: false, error: "Opération annulée ou échouée" };
     },
-    [entryActions, state.currentEntry?.id, createNewSession]
+    [entryActions, state.currentEntry?.id, createNewSession, handleDataChanged]
   );
 
+  // ✅ Autres actions corrigées (restent identiques mais utilisent les nouvelles méthodes)
   const restoreFromTrash = useCallback(
     async (entry: MurmureEntry): Promise<StorageResult> => {
       const success = await entryActions.restoreFromTrash(entry);
@@ -319,10 +423,9 @@ export const useStorage = () => {
     setIsPreviewModalVisible(false);
   }, []);
 
-  // ✅ Fonction pour mettre à jour le texte AVEC traitement des majuscules
+  // ✅ Fonction pour mettre à jour le texte avec traitement
   const setText = useCallback(
     (newText: string) => {
-      // Traitement intelligent du texte avec optimisation pour les gros textes
       const processedText = processTextIncremental(
         newText,
         previousTextRef.current
@@ -334,7 +437,7 @@ export const useStorage = () => {
     [processTextIncremental]
   );
 
-  // Fonction pour basculer les options de traitement du texte
+  // Fonctions de traitement du texte (inchangées)
   const toggleTextOption = useCallback((option: keyof TextOptions) => {
     setTextOptions((prev) => ({
       ...prev,
@@ -342,7 +445,6 @@ export const useStorage = () => {
     }));
   }, []);
 
-  // Fonction pour appliquer le traitement au texte courant
   const applyTextProcessing = useCallback(() => {
     if (state.text) {
       const processedText = processText(state.text);
@@ -351,12 +453,11 @@ export const useStorage = () => {
     }
   }, [state.text, processText]);
 
-  // Fonction pour obtenir les statistiques de traitement
   const getTextStats = useCallback(() => {
     return getProcessingStats(state.text);
   }, [state.text, getProcessingStats]);
 
-  // Effet pour le compteur de mots (optimisé)
+  // Compteur de mots optimisé
   const wordCount = useMemo(() => {
     if (!state.text.trim()) return 0;
     return state.text
@@ -370,19 +471,26 @@ export const useStorage = () => {
     setState((prev) => ({ ...prev, wordCount }));
   }, [wordCount]);
 
-  // Effet pour la sauvegarde automatique
+  // ✅ Effet pour la sauvegarde automatique CORRIGÉ
   useEffect(() => {
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
 
+    // ✅ Sauvegarder seulement si :
+    // 1. Il y a une entrée courante
+    // 2. Le texte a changé par rapport à l'entrée
+    // 3. Le texte n'est pas vide
+    // 4. Le texte est différent de la dernière sauvegarde
     if (
       state.currentEntry &&
       state.text !== state.currentEntry.content &&
       state.text.trim() !== "" &&
       state.text !== lastSavedContentRef.current
     ) {
+      console.log("⏰ Programmation de la sauvegarde automatique");
       saveTimeoutRef.current = setTimeout(() => {
+        console.log("💾 Sauvegarde automatique déclenchée");
         saveCurrentEntry().catch(console.warn);
       }, 800);
     }
@@ -433,7 +541,7 @@ export const useStorage = () => {
     deleteEntryPermanently,
     emptyTrash,
 
-    // ✅ Nouvelles fonctions pour le traitement du texte
+    // Fonctions de traitement du texte
     textOptions,
     toggleTextOption,
     applyTextProcessing,

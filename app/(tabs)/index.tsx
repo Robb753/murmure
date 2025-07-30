@@ -1,4 +1,3 @@
-// app/(tabs)/index.tsx - Version mise à jour
 import React, {
   useState,
   useRef,
@@ -101,7 +100,7 @@ export default function MainPage() {
   const { loadSounds, playSound, cleanupSounds } = useAudio();
   const [showThemeSelector, setShowThemeSelector] = useState(false);
 
-  // ✅ Hook storage mis à jour avec les nouvelles fonctionnalités
+  // ✅ Hook storage corrigé
   const {
     currentEntry,
     entries,
@@ -125,14 +124,14 @@ export default function MainPage() {
     isPreviewModalVisible,
     openPreview,
     closePreview,
-    // ✅ Nouvelles fonctions pour le traitement du texte
+    // Nouvelles fonctions pour le traitement du texte
     textOptions,
     toggleTextOption,
     applyTextProcessing,
     getTextStats,
   } = useStorage();
 
-  // ✅ État pour les paramètres de texte
+  // État pour les paramètres de texte
   const [showTextSettings, setShowTextSettings] = useState(false);
 
   const {
@@ -145,34 +144,46 @@ export default function MainPage() {
     formatTime,
   } = useTimer({ playSound });
 
+  const handleTimerEnd = useCallback(async () => {
+    // Sortir du mode focus avant l'alerte
+    setFocusMode(false);
+    focusModeRef.current = false;
+
+    // Fonction interne pour créer une nouvelle session depuis le timer
+    const createNewSessionFromTimer = async () => {
+      resetTimer();
+      const result = await createNewSession();
+      if (result.success) {
+        console.log("✅ Nouvelle session créée depuis le timer");
+        // Focus automatique sur le champ de texte
+        setTimeout(() => textInputRef.current?.focus(), 100);
+      } else {
+        console.error("❌ Échec création session depuis timer:", result.error);
+      }
+    };
+
+    // Timer terminé, afficher l'alerte personnalisée
+    Alert.alert(
+      "Session terminée ✨",
+      `${wordCount} mots écrits en ${selectedDuration} minutes !`,
+      [
+        {
+          text: "Continuer",
+          onPress: () => resetTimer(),
+        },
+        {
+          text: "Nouvelle session",
+          onPress: createNewSessionFromTimer,
+        },
+      ]
+    );
+  }, [wordCount, selectedDuration, resetTimer, createNewSession]);
   // Gestion personnalisée de la fin du timer
   useEffect(() => {
     if (timeRemaining === 0 && isTimerRunning) {
-      // Sortir du mode focus avant l'alerte
-      setFocusMode(false);
-      focusModeRef.current = false;
-
-      // Timer terminé, afficher l'alerte personnalisée
-      Alert.alert(
-        "Session terminée ✨",
-        `${wordCount} mots écrits en ${selectedDuration} minutes !`,
-        [
-          {
-            text: "Continuer",
-            onPress: () => resetTimer(),
-          },
-          { text: "Nouvelle session", onPress: createNewSession },
-        ]
-      );
+      handleTimerEnd();
     }
-  }, [
-    timeRemaining,
-    isTimerRunning,
-    wordCount,
-    selectedDuration,
-    resetTimer,
-    createNewSession,
-  ]);
+  }, [timeRemaining, isTimerRunning, handleTimerEnd]);
 
   // Placeholders épurés
   const placeholders = useMemo(
@@ -187,28 +198,117 @@ export default function MainPage() {
   );
   const [placeholder, setPlaceholder] = useState("");
 
-  // Charger les données au démarrage
+  // ✅ Charger les données au démarrage - version corrigée
+  // ✅ Effet pour le chargement initial au focus
   useFocusEffect(
     useCallback(() => {
+      console.log("🔄 Focus effect - chargement des données");
       loadData();
       loadSounds();
       setPlaceholder(
         placeholders[Math.floor(Math.random() * placeholders.length)]
       );
+
+      // Nettoyage des sons seulement
       return () => {
-        if (currentEntry && text.trim()) {
-          saveCurrentEntry();
-        }
         cleanupSounds();
       };
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [placeholders])
+    }, [placeholders, loadData, loadSounds, cleanupSounds])
   );
+
+  // ✅ Effet séparé pour la sauvegarde automatique avant fermeture
+  useEffect(() => {
+
+    // Pour le web : écouter beforeunload
+    if (Platform.OS === "web") {
+      const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+        if (currentEntry && text.trim()) {
+          console.log("💾 Sauvegarde avant fermeture de page");
+          // Sauvegarde synchrone pour le web
+          saveCurrentEntry();
+
+          // Optionnel : demander confirmation si du contenu non sauvé
+          e.preventDefault();
+          e.returnValue = "";
+        }
+      };
+
+      window.addEventListener("beforeunload", handleBeforeUnload);
+
+      return () => {
+        window.removeEventListener("beforeunload", handleBeforeUnload);
+      };
+    }
+
+    // Pour mobile : écouter les changements d'état de l'app
+    // Si vous utilisez @react-native-async-storage/async-storage
+    // vous pouvez ajouter un listener pour AppState
+
+    return () => {
+      // Nettoyage si nécessaire
+    };
+  }, [currentEntry, text, saveCurrentEntry]);
+
+  // ✅ Optionnel : Sauvegarde périodique pour plus de sécurité
+  useEffect(() => {
+    // Sauvegarder toutes les 30 secondes si du contenu existe
+    const interval = setInterval(() => {
+      if (currentEntry && text.trim() && text !== currentEntry.content) {
+        console.log("💾 Sauvegarde périodique");
+        saveCurrentEntry().catch(console.warn);
+      }
+    }, 30000); // 30 secondes
+
+    return () => clearInterval(interval);
+  }, [currentEntry, text, saveCurrentEntry]);
 
   // Références pour éviter les problèmes de dépendances
   const focusModeRef = useRef(false);
   const handleStopTimerRef = useRef<(() => Promise<void>) | null>(null);
   const showFocusControlsTemporarilyRef = useRef<(() => void) | null>(null);
+
+  // ✅ Fonction corrigée pour créer une nouvelle session
+  const handleCreateNewSession = useCallback(async () => {
+    console.log("🆕 Demande de création d'une nouvelle session");
+
+    // Fonction interne pour effectuer la création
+    const performCreation = async () => {
+      const result = await createNewSession();
+      if (result.success) {
+        console.log("✅ Nouvelle session créée avec succès");
+        // Focus automatique sur le champ de texte
+        setTimeout(() => textInputRef.current?.focus(), 100);
+      } else {
+        console.error("❌ Échec création session:", result.error);
+      }
+    };
+
+    try {
+      // Confirmer si l'utilisateur le souhaite vraiment
+      if (text.trim()) {
+        if (Platform.OS === "web") {
+          const confirmed = window.confirm(
+            "Créer une nouvelle session ?\n\nVotre travail actuel sera sauvegardé automatiquement."
+          );
+          if (!confirmed) return;
+        } else {
+          Alert.alert(
+            "Créer une nouvelle session ?",
+            "Votre travail actuel sera sauvegardé automatiquement.",
+            [
+              { text: "Annuler", style: "cancel" },
+              { text: "Nouvelle session", onPress: performCreation },
+            ]
+          );
+          return;
+        }
+      }
+
+      await performCreation();
+    } catch (error) {
+      console.error("❌ Erreur lors de la création de session:", error);
+    }
+  }, [text, createNewSession]);
 
   // Gestion du mode focus - Fonctions simples sans useCallback
   const handleStopTimer = async () => {
@@ -513,7 +613,7 @@ export default function MainPage() {
                   scrollEnabled={true}
                   selectionColor={currentTheme.accent + "40"}
                   underlineColorAndroid="transparent"
-                  // ✅ Focus automatique quand vide
+                  // Focus automatique quand vide
                   onLayout={() => {
                     if (text.trim() === "") {
                       setTimeout(() => textInputRef.current?.focus(), 100);
@@ -688,7 +788,7 @@ export default function MainPage() {
               ]}
             >
               <TouchableOpacity
-                onPress={createNewSession}
+                onPress={handleCreateNewSession}
                 style={[
                   mainPageStyles.headerButton,
                   { backgroundColor: currentTheme.surface },
@@ -888,7 +988,7 @@ export default function MainPage() {
                 >
                   {wordCount} mot{wordCount > 1 ? "s" : ""}
                 </Text>
-                {/* ✅ Indicateur de traitement des majuscules */}
+                {/* Indicateur de traitement des majuscules */}
                 {textOptions.autoLowercase && (
                   <Text
                     style={[
@@ -915,33 +1015,6 @@ export default function MainPage() {
               </View>
 
               <View style={mainPageStyles.footerRight}>
-                {/* ✅ Bouton paramètres de texte 
-                <TouchableOpacity
-                  onPress={() => setShowTextSettings(true)}
-                  style={[
-                    mainPageStyles.footerButton,
-                    {
-                      backgroundColor: textOptions.autoLowercase
-                        ? currentTheme.accent + "20"
-                        : "transparent",
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      mainPageStyles.footerButtonText,
-                      {
-                        color: textOptions.autoLowercase
-                          ? currentTheme.accent
-                          : currentTheme.textSecondary,
-                      },
-                    ]}
-                  >
-                    🔤
-                  </Text>
-                </TouchableOpacity>
-                */}
-
                 {/* Sélecteur taille de texte */}
                 <TouchableOpacity
                   onPress={toggleFontSizeMenu}
@@ -1060,7 +1133,7 @@ export default function MainPage() {
             </TouchableOpacity>
           </Modal>
 
-          {/* ✅ Nouvelle sidebar avec corbeille */}
+          {/* Nouvelle sidebar avec corbeille */}
           {sidebarOpen && (
             <EnhancedSidebar
               currentTheme={currentTheme}
@@ -1081,7 +1154,7 @@ export default function MainPage() {
           )}
         </View>
 
-        {/* ✅ Modal de prévisualisation */}
+        {/* Modal de prévisualisation */}
         <PreviewModal
           visible={isPreviewModalVisible}
           entry={previewEntry}
@@ -1092,7 +1165,7 @@ export default function MainPage() {
           isFromTrash={previewEntry?.isInTrash || false}
         />
 
-        {/* ✅ Sélecteur de thème */}
+        {/* Sélecteur de thème */}
         <ThemeSelector
           visible={showThemeSelector}
           onClose={() => setShowThemeSelector(false)}
@@ -1104,7 +1177,7 @@ export default function MainPage() {
           getThemesList={getThemesList}
         />
 
-        {/* ✅ Paramètres de traitement du texte */}
+        {/* Paramètres de traitement du texte */}
         <TextSettings
           visible={showTextSettings}
           onClose={() => setShowTextSettings(false)}

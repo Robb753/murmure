@@ -485,7 +485,7 @@ const EnhancedSidebar = ({
     () => ({
       searchInContent: true,
       searchInPreview: true,
-      searchInDate: true,
+      searchInDate: false,
       caseSensitive: false,
       minScore: 0.1,
       minQueryLength: 3, // ✅ Minimum 3 caractères

@@ -1,3 +1,4 @@
+// app/lib/storage.ts - Version finale corrigée
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { format } from "date-fns";
 import { Platform, Alert } from "react-native";
@@ -48,7 +49,7 @@ class MurmureStorage {
   private static readonly STORAGE_VERSION_KEY = "murmure_storage_version";
   public static readonly TRASH_RETENTION_DAYS = 30;
   private static readonly CURRENT_VERSION = "1.0.0";
-  private static readonly MAX_ENTRIES = 1000; // Limite pour éviter les problèmes de performance
+  private static readonly MAX_ENTRIES = 1000;
 
   // Gestionnaire d'erreurs centralisé
   private static handleError<T = void>(
@@ -124,9 +125,7 @@ class MurmureStorage {
   // Notification utilisateur cross-platform
   private static notifyUser(title: string, message: string): void {
     if (Platform.OS === "web") {
-      // Utiliser une notification plus discrète sur le web
       console.warn(`${title}: ${message}`);
-      // Optionnel: implémenter un toast ou notification custom
     } else {
       Alert.alert(title, message, [{ text: "OK" }]);
     }
@@ -213,7 +212,6 @@ class MurmureStorage {
         console.log(
           `🔄 Migration de ${currentVersion} vers ${this.CURRENT_VERSION}`
         );
-        // Ici, vous pouvez ajouter la logique de migration future
         await AsyncStorage.setItem(
           this.STORAGE_VERSION_KEY,
           this.CURRENT_VERSION
@@ -226,8 +224,39 @@ class MurmureStorage {
     }
   }
 
-  // Créer une nouvelle entrée
-  static createNewEntry(): MurmureEntry {
+  // ✅ CORRECTION 1: Méthode pour obtenir l'entrée courante sans création
+  static async getCurrentEntryOrNull(): Promise<
+    StorageResult<MurmureEntry | null>
+  > {
+    try {
+      // Charger l'ID de l'entrée courante
+      const currentIdResult = await this.loadCurrentEntryId();
+      if (!currentIdResult.success || !currentIdResult.data) {
+        return { success: true, data: null };
+      }
+
+      // Charger toutes les entrées actives
+      const entriesResult = await this.loadActiveEntries();
+      if (!entriesResult.success || !entriesResult.data) {
+        return { success: true, data: null };
+      }
+
+      // Trouver l'entrée courante
+      const currentEntry = entriesResult.data.find(
+        (entry) => entry.id === currentIdResult.data
+      );
+
+      return { success: true, data: currentEntry || null };
+    } catch (error) {
+      return this.handleError<MurmureEntry | null>(
+        error,
+        "chargement entrée courante"
+      );
+    }
+  }
+
+  // ✅ CORRECTION 2: Créer un objet entrée (privé)
+  private static createNewEntryObject(): MurmureEntry {
     const now = new Date();
     const id = `${now.getTime()}-${Math.random().toString(36).substr(2, 9)}`;
     const dateString = format(now, "yyyy-MM-dd-HH-mm-ss");
@@ -263,6 +292,69 @@ class MurmureStorage {
       wordCount: 0,
       isInTrash: false,
     };
+  }
+
+  // ✅ CORRECTION 3: Nouvelle méthode pour démarrer une session
+  static async startNewSession(): Promise<StorageResult<MurmureEntry>> {
+    try {
+      const newEntry = this.createNewEntryObject();
+
+      // Sauvegarder l'ID comme entrée courante (sans sauvegarder l'entrée vide)
+      const saveIdResult = await this.saveCurrentEntryId(newEntry.id);
+      if (!saveIdResult.success) {
+        console.warn("⚠️ Impossible de sauvegarder l'ID de session");
+      }
+
+      return { success: true, data: newEntry };
+    } catch (error) {
+      return this.handleError<MurmureEntry>(
+        error,
+        "démarrage nouvelle session"
+      );
+    }
+  }
+
+  // ✅ CORRECTION 4: Méthode pour obtenir ou créer la première entrée
+  static async getOrCreateFirstEntry(): Promise<StorageResult<MurmureEntry>> {
+    try {
+      // Vérifier s'il y a des entrées existantes
+      const entriesResult = await this.loadActiveEntries();
+      if (!entriesResult.success) {
+        return {
+          success: false,
+          error: entriesResult.error,
+          errorCode: entriesResult.errorCode,
+        };
+      }
+
+      const entries = entriesResult.data || [];
+
+      // Si aucune entrée, créer la première avec le message de bienvenue
+      if (entries.length === 0) {
+        const newEntry = this.createNewEntryObject();
+        newEntry.content = this.getWelcomeMessage();
+        newEntry.previewText = this.generatePreview(newEntry.content);
+        newEntry.wordCount = this.countWords(newEntry.content);
+
+        // Sauvegarder cette première entrée
+        const saveResult = await this.saveEntry(newEntry);
+        if (!saveResult.success || !saveResult.data) {
+          return {
+            success: false,
+            error: saveResult.error,
+            errorCode: saveResult.errorCode,
+          };
+        }
+
+        return { success: true, data: saveResult.data };
+      }
+
+      // Retourner l'entrée la plus récente
+      const latestEntry = entries[0];
+      return { success: true, data: latestEntry };
+    } catch (error) {
+      return this.handleError<MurmureEntry>(error, "obtention première entrée");
+    }
   }
 
   // Sauvegarder toutes les entrées avec validation
@@ -305,7 +397,6 @@ class MurmureStorage {
       // Vérifier la taille des données
       const sizeInKB = new Blob([serializedData]).size / 1024;
       if (sizeInKB > 5000) {
-        // Limite à 5MB
         return this.handleError<MurmureEntry[]>(
           new Error(`Données trop volumineuses: ${sizeInKB.toFixed(2)}KB`),
           "sauvegarde"
@@ -425,7 +516,7 @@ class MurmureStorage {
     return { success: true, data: trashEntries };
   }
 
-  // Sauvegarder une entrée spécifique
+  // ✅ CORRECTION 5: Sauvegarder une entrée spécifique (ne pas sauvegarder les vides)
   static async saveEntry(
     entry: MurmureEntry
   ): Promise<StorageResult<MurmureEntry>> {
@@ -434,6 +525,16 @@ class MurmureStorage {
       if (!validation.success || !validation.data) return validation;
 
       const validatedEntry = validation.data;
+
+      // ✅ Ne pas sauvegarder les entrées complètement vides
+      if (
+        validatedEntry.content.trim() === "" &&
+        validatedEntry.wordCount === 0
+      ) {
+        console.log("📝 Entrée vide non sauvegardée:", validatedEntry.id);
+        return { success: true, data: validatedEntry };
+      }
+
       const entriesResult = await this.loadEntries();
       if (!entriesResult.success || !entriesResult.data) {
         return {
@@ -459,7 +560,7 @@ class MurmureStorage {
       if (existingIndex >= 0) {
         entries[existingIndex] = updatedEntry;
       } else {
-        entries.unshift(updatedEntry); // Ajouter au début
+        entries.unshift(updatedEntry);
       }
 
       const saveResult = await this.saveEntries(entries);
@@ -507,18 +608,18 @@ class MurmureStorage {
         );
       }
 
-      // ✅ Vérifier que l'entrée n'est pas déjà dans la corbeille
+      // Vérifier que l'entrée n'est pas déjà dans la corbeille
       if (entries[entryIndex].isInTrash) {
         console.warn(`Entrée ${entryId} déjà dans la corbeille`);
-        return { success: true }; // Pas d'erreur, juste déjà fait
+        return { success: true };
       }
 
-      // ✅ Mettre à jour l'entrée avec les bonnes propriétés
+      // Mettre à jour l'entrée avec les bonnes propriétés
       entries[entryIndex] = {
         ...entries[entryIndex],
         isInTrash: true,
         deletedAt: new Date(),
-        updatedAt: new Date(), // ✅ Mettre à jour la date de modification
+        updatedAt: new Date(),
       };
 
       const saveResult = await this.saveEntries(entries);
@@ -759,8 +860,6 @@ class MurmureStorage {
     }
   }
 
-  // Fonctions utilitaires existantes avec gestion d'erreur
-
   // Obtenir le nombre de jours restants avant suppression définitive
   static getDaysUntilDeletion = (entry: MurmureEntry): number | null => {
     if (!entry.isInTrash || !entry.deletedAt) return null;
@@ -835,54 +934,7 @@ class MurmureStorage {
     }
   }
 
-  // Obtenir une entrée pour aujourd'hui ou créer une nouvelle
-  static async getTodayEntryOrCreate(): Promise<StorageResult<MurmureEntry>> {
-    try {
-      const activeEntriesResult = await this.loadActiveEntries();
-      if (!activeEntriesResult.success || !activeEntriesResult.data) {
-        return {
-          success: false,
-          error: activeEntriesResult.error,
-          errorCode: activeEntriesResult.errorCode,
-        };
-      }
-
-      const entries = activeEntriesResult.data;
-      const today = format(new Date(), "MMM d");
-
-      // Chercher une entrée vide d'aujourd'hui
-      const todayEmptyEntry = entries.find(
-        (entry) => entry.date === today && entry.content.trim() === ""
-      );
-
-      if (todayEmptyEntry) {
-        return { success: true, data: todayEmptyEntry };
-      }
-
-      // Créer une nouvelle entrée
-      const newEntry = this.createNewEntry();
-
-      // Si c'est la première entrée, ajouter le message de bienvenue
-      if (entries.length === 0) {
-        newEntry.content = this.getWelcomeMessage();
-        newEntry.previewText = this.generatePreview(newEntry.content);
-        newEntry.wordCount = this.countWords(newEntry.content);
-      }
-
-      const saveResult = await this.saveEntry(newEntry);
-      if (!saveResult.success || !saveResult.data) {
-        return {
-          success: false,
-          error: saveResult.error,
-          errorCode: saveResult.errorCode,
-        };
-      }
-
-      return { success: true, data: saveResult.data };
-    } catch (error) {
-      return this.handleError<MurmureEntry>(error, "création entrée du jour");
-    }
-  }
+  // ⚠️ SUPPRIMÉ: getTodayEntryOrCreate - cause des créations automatiques
 
   // Message de bienvenue
   private static getWelcomeMessage(): string {
