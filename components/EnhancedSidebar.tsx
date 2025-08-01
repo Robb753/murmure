@@ -1,4 +1,3 @@
-// components/EnhancedSidebar.tsx - Version finale corrigée
 import React, { useState, useMemo } from "react";
 import {
   View,
@@ -17,7 +16,8 @@ import { SearchBar } from "@/components/SearchBar";
 import { HighlightedText } from "@/components/HighlightedText";
 import { formatEntryDate, getDateColorIntensity } from "@/utils/dateUtils";
 
-interface EnhancedSidebarProps {
+// ✅ Interface simplifiée - suppression des props inutiles
+interface SimplifiedSidebarProps {
   currentTheme: any;
   currentEntry: MurmureEntry | null;
   entries: MurmureEntry[];
@@ -25,25 +25,27 @@ interface EnhancedSidebarProps {
   onClose: () => void;
   onLoadEntry: (entry: MurmureEntry) => void;
   onDataChanged: () => void;
-  onOpenPreview: (entry: MurmureEntry) => void;
   onShareEntry: (entry: MurmureEntry) => void;
   onMoveToTrash: (entry: MurmureEntry) => void;
   onRestoreFromTrash: (entry: MurmureEntry) => void;
   onDeletePermanently: (entry: MurmureEntry) => void;
   onEmptyTrash: () => void;
   getDaysUntilDeletion: (entry: MurmureEntry) => number | null;
+  // ✅ Nouvelle fonction d'export
+  onExportEntry: (entry: MurmureEntry) => void;
 }
 
 type SidebarTab = "sessions" | "trash";
 
-const ActiveEntry = ({
+// ✅ Composant Session simplifié - clic direct = chargement
+const SessionEntry = ({
   item,
   currentTheme,
   currentEntry,
   onLoadEntry,
-  onOpenPreview,
   onShareEntry,
   onMoveToTrash,
+  onExportEntry,
   isSearchResult = false,
   highlightedPreview,
 }: {
@@ -51,9 +53,9 @@ const ActiveEntry = ({
   currentTheme: any;
   currentEntry: MurmureEntry | null;
   onLoadEntry: (entry: MurmureEntry) => void;
-  onOpenPreview: (entry: MurmureEntry) => void;
   onShareEntry: (entry: MurmureEntry) => void;
   onMoveToTrash: (entry: MurmureEntry) => void;
+  onExportEntry: (entry: MurmureEntry) => void;
   isSearchResult?: boolean;
   highlightedPreview?: string;
 }) => {
@@ -69,46 +71,24 @@ const ActiveEntry = ({
 
   const dateColorIntensity = getDateColorIntensity(item.createdAt);
 
-  // ✅ Handlers corrigés avec gestion d'erreur et logs
-  const handleLoadEntry = () => {
+  // ✅ Handlers simplifiés
+  const handleExport = async () => {
     try {
-      console.log("📂 Chargement entrée:", item.id);
-      onLoadEntry(item);
+      onExportEntry(item);
       setMenuVisible(false);
     } catch (error) {
-      console.error("❌ Erreur chargement:", error);
+      console.error("❌ Erreur export:", error);
+      setMenuVisible(false);
     }
   };
 
-  const handleShareEntry = async () => {
+  const handleDelete = async () => {
     try {
-      console.log("📤 Partage entrée:", item.id);
-      await onShareEntry(item);
-      setMenuVisible(false);
-    } catch (error) {
-      console.error("❌ Erreur partage:", error);
-    }
-  };
-
-  const handleMoveToTrash = async () => {
-    try {
-      console.log("🗑️ Handler suppression appelé pour:", item.id);
-      console.log("Entrée complète:", {
-        id: item.id,
-        date: item.date,
-        previewText: item.previewText,
-        contentLength: item.content?.length || 0,
-        isInTrash: item.isInTrash,
-      });
-
-      // ✅ Appel direct de la fonction
       await onMoveToTrash(item);
       setMenuVisible(false);
-
-      console.log("✅ Handler suppression terminé");
     } catch (error) {
-      console.error("❌ Erreur dans handler suppression:", error);
-      setMenuVisible(false); // Fermer le menu même en cas d'erreur
+      console.error("❌ Erreur suppression:", error);
+      setMenuVisible(false);
     }
   };
 
@@ -121,6 +101,7 @@ const ActiveEntry = ({
 
   return (
     <View style={sidebarStyles.sidebarEntryContainer}>
+      {/* ✅ Clic direct = chargement (plus de preview) */}
       <TouchableOpacity
         style={[
           sidebarStyles.sidebarEntry,
@@ -135,7 +116,7 @@ const ActiveEntry = ({
                   .padStart(2, "0")}`,
           },
         ]}
-        onPress={() => onOpenPreview(item)}
+        onPress={() => onLoadEntry(item)}
         onLongPress={Platform.OS !== "web" ? handleLongPress : undefined}
       >
         <Text
@@ -188,6 +169,7 @@ const ActiveEntry = ({
         </Text>
       </TouchableOpacity>
 
+      {/* ✅ Menu ultra-simple : 2 actions max */}
       {Platform.OS === "web" && (
         <Menu
           visible={menuVisible}
@@ -197,7 +179,7 @@ const ActiveEntry = ({
             borderRadius: 12,
             borderWidth: 1,
             borderColor: currentTheme.border,
-            minWidth: 160,
+            minWidth: 140,
             shadowColor: "#000",
             shadowOffset: { width: 0, height: 4 },
             shadowOpacity: 0.15,
@@ -227,30 +209,13 @@ const ActiveEntry = ({
           }
         >
           <Menu.Item
-            onPress={() => {
-              onOpenPreview(item);
-              setMenuVisible(false);
-            }}
-            title="👁️ prévisualiser"
+            onPress={handleExport}
+            title="📤 Export"
             titleStyle={{ color: currentTheme.text, fontSize: 14 }}
           />
           <Menu.Item
-            onPress={handleLoadEntry}
-            title="📂 charger"
-            titleStyle={{ color: currentTheme.text, fontSize: 14 }}
-          />
-          <Menu.Item
-            onPress={handleShareEntry}
-            title="📤 partager"
-            titleStyle={{ color: currentTheme.text, fontSize: 14 }}
-          />
-          {/* ✅ Menu item corrigé avec logs */}
-          <Menu.Item
-            onPress={() => {
-              console.log("🗑️ Menu Item suppression cliqué");
-              handleMoveToTrash();
-            }}
-            title="🗑️ supprimer"
+            onPress={handleDelete}
+            title="🗑️ Supprimer"
             titleStyle={{ color: "#ef4444", fontSize: 14 }}
           />
         </Menu>
@@ -259,11 +224,11 @@ const ActiveEntry = ({
   );
 };
 
+// ✅ Composant Corbeille simplifié
 const TrashEntry = ({
   item,
   currentTheme,
-  onOpenPreview,
-  onShareEntry,
+  onLoadEntry,
   onRestoreFromTrash,
   onDeletePermanently,
   getDaysUntilDeletion,
@@ -272,8 +237,7 @@ const TrashEntry = ({
 }: {
   item: MurmureEntry;
   currentTheme: any;
-  onOpenPreview: (entry: MurmureEntry) => void;
-  onShareEntry: (entry: MurmureEntry) => void;
+  onLoadEntry: (entry: MurmureEntry) => void;
   onRestoreFromTrash: (entry: MurmureEntry) => void;
   onDeletePermanently: (entry: MurmureEntry) => void;
   getDaysUntilDeletion: (entry: MurmureEntry) => number | null;
@@ -290,23 +254,28 @@ const TrashEntry = ({
     fullFormat: false,
   });
 
+  // ✅ Handler restore simplifié
   const handleRestore = async () => {
     await onRestoreFromTrash(item);
     setMenuVisible(false);
   };
 
+  // ✅ Handler suppression SANS confirmation - la confirmation est gérée par le parent
   const handleDeletePermanently = async () => {
-    await onDeletePermanently(item);
-    setMenuVisible(false);
+    setMenuVisible(false); // Fermer le menu d'abord
+    await onDeletePermanently(item); // Laisser le parent gérer la confirmation
   };
 
-  const handleShareEntry = async () => {
-    await onShareEntry(item);
-    setMenuVisible(false);
+  const handleLongPress = () => {
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+    setMenuVisible(true);
   };
 
   return (
     <View style={sidebarStyles.sidebarEntryContainer}>
+      {/* ✅ Clic = chargement en lecture seule */}
       <TouchableOpacity
         style={[
           sidebarStyles.sidebarEntry,
@@ -316,7 +285,8 @@ const TrashEntry = ({
             opacity: 0.7,
           },
         ]}
-        onPress={() => onOpenPreview(item)}
+        onPress={() => onLoadEntry(item)}
+        onLongPress={Platform.OS !== "web" ? handleLongPress : undefined}
       >
         <View
           style={{
@@ -396,6 +366,7 @@ const TrashEntry = ({
         </View>
       </TouchableOpacity>
 
+      {/* ✅ Menu ultra-simple : 2 actions max */}
       {Platform.OS === "web" && (
         <Menu
           visible={menuVisible}
@@ -405,7 +376,7 @@ const TrashEntry = ({
             borderRadius: 12,
             borderWidth: 1,
             borderColor: currentTheme.border,
-            minWidth: 160,
+            minWidth: 140,
             shadowColor: "#000",
             shadowOffset: { width: 0, height: 4 },
             shadowOpacity: 0.15,
@@ -419,15 +390,12 @@ const TrashEntry = ({
                 sidebarStyles.webActionsButtonExternal,
                 {
                   backgroundColor: currentTheme.surface,
-                  borderColor: currentTheme.border,
+                  borderColor: "#ef4444",
                 },
               ]}
             >
               <Text
-                style={[
-                  sidebarStyles.webActionsIcon,
-                  { color: currentTheme.textSecondary },
-                ]}
+                style={[sidebarStyles.webActionsIcon, { color: "#ef4444" }]}
               >
                 ⋯
               </Text>
@@ -435,26 +403,13 @@ const TrashEntry = ({
           }
         >
           <Menu.Item
-            onPress={() => {
-              onOpenPreview(item);
-              setMenuVisible(false);
-            }}
-            title="👁️ prévisualiser"
-            titleStyle={{ color: currentTheme.text, fontSize: 14 }}
-          />
-          <Menu.Item
             onPress={handleRestore}
-            title="♻️ restaurer"
+            title="♻️ Restaurer"
             titleStyle={{ color: "#10b981", fontSize: 14 }}
           />
           <Menu.Item
-            onPress={handleShareEntry}
-            title="📤 partager"
-            titleStyle={{ color: currentTheme.text, fontSize: 14 }}
-          />
-          <Menu.Item
             onPress={handleDeletePermanently}
-            title="💀 supprimer définitivement"
+            title="💀 Supprimer définitivement"
             titleStyle={{ color: "#ef4444", fontSize: 14 }}
           />
         </Menu>
@@ -463,33 +418,35 @@ const TrashEntry = ({
   );
 };
 
-const EnhancedSidebar = ({
+// ✅ Composant principal ultra-simplifié
+const SimplifiedSidebar = ({
   currentTheme,
   currentEntry,
   entries,
   trashEntries,
   onClose,
   onLoadEntry,
-  onOpenPreview,
   onShareEntry,
   onMoveToTrash,
   onRestoreFromTrash,
   onDeletePermanently,
   onEmptyTrash,
   getDaysUntilDeletion,
-}: EnhancedSidebarProps) => {
+  onDataChanged,
+  onExportEntry,
+}: SimplifiedSidebarProps) => {
   const [activeTab, setActiveTab] = useState<SidebarTab>("sessions");
 
-  // ✅ Options de recherche intelligentes stables
+  // ✅ Options de recherche simplifiées
   const searchOptions = useMemo(
     () => ({
       searchInContent: true,
       searchInPreview: true,
-      searchInDate: false,
+      searchInDate: false, // Supprimé pour simplifier
       caseSensitive: false,
       minScore: 0.1,
-      minQueryLength: 3, // ✅ Minimum 3 caractères
-      searchWholeWordsOnly: true, // ✅ Recherche par mots complets
+      minQueryLength: 2, // Réduit à 2 caractères
+      searchWholeWordsOnly: false, // Simplifié
     }),
     []
   );
@@ -497,7 +454,7 @@ const EnhancedSidebar = ({
   const sessionsSearch = useSearch(entries, searchOptions);
   const trashSearch = useSearch(trashEntries, searchOptions);
 
-  // ✅ Obtenir les données à afficher selon l'onglet actif
+  // Données à afficher selon l'onglet actif
   const displayData = useMemo(() => {
     if (activeTab === "sessions") {
       const search = sessionsSearch;
@@ -538,29 +495,29 @@ const EnhancedSidebar = ({
     if (Platform.OS === "web") {
       if (
         window.confirm(
-          `vider la corbeille ?\n\n${trashEntries.length} session${
+          `Vider la corbeille ?\n\n${trashEntries.length} session${
             trashEntries.length > 1 ? "s" : ""
           } sera${
             trashEntries.length > 1 ? "ont" : ""
           } définitivement supprimée${
             trashEntries.length > 1 ? "s" : ""
-          }.\n\n⚠️ cette action est irréversible !`
+          }.\n\n⚠️ Cette action est irréversible !`
         )
       ) {
         onEmptyTrash();
       }
     } else {
       Alert.alert(
-        "vider la corbeille ?",
+        "Vider la corbeille ?",
         `${trashEntries.length} session${
           trashEntries.length > 1 ? "s" : ""
         } sera${trashEntries.length > 1 ? "ont" : ""} définitivement supprimée${
           trashEntries.length > 1 ? "s" : ""
-        }.\n\n⚠️ cette action est irréversible !`,
+        }.\n\n⚠️ Cette action est irréversible !`,
         [
-          { text: "annuler", style: "cancel" },
+          { text: "Annuler", style: "cancel" },
           {
-            text: "vider la corbeille",
+            text: "Vider la corbeille",
             style: "destructive",
             onPress: onEmptyTrash,
           },
@@ -569,15 +526,16 @@ const EnhancedSidebar = ({
     }
   };
 
-  const renderActiveEntry = ({ item }: { item: any }) => (
-    <ActiveEntry
+  // ✅ Render functions simplifiées
+  const renderSessionEntry = ({ item }: { item: any }) => (
+    <SessionEntry
       item={item}
       currentTheme={currentTheme}
       currentEntry={currentEntry}
       onLoadEntry={onLoadEntry}
-      onOpenPreview={onOpenPreview}
       onShareEntry={onShareEntry}
       onMoveToTrash={onMoveToTrash}
+      onExportEntry={onExportEntry}
       isSearchResult={item.isSearchResult}
       highlightedPreview={item.highlightedPreview}
     />
@@ -587,8 +545,7 @@ const EnhancedSidebar = ({
     <TrashEntry
       item={item}
       currentTheme={currentTheme}
-      onOpenPreview={onOpenPreview}
-      onShareEntry={onShareEntry}
+      onLoadEntry={onLoadEntry}
       onRestoreFromTrash={onRestoreFromTrash}
       onDeletePermanently={onDeletePermanently}
       getDaysUntilDeletion={getDaysUntilDeletion}
@@ -607,6 +564,7 @@ const EnhancedSidebar = ({
         },
       ]}
     >
+      {/* ✅ Header simplifié */}
       <View
         style={[
           sidebarStyles.sidebarHeader,
@@ -677,7 +635,7 @@ const EnhancedSidebar = ({
         </TouchableOpacity>
       </View>
 
-      {/* ✅ Barre de recherche avec statistiques intelligentes */}
+      {/* Barre de recherche simplifiée */}
       <SearchBar
         currentTheme={currentTheme}
         searchQuery={displayData.search.searchQuery}
@@ -693,10 +651,11 @@ const EnhancedSidebar = ({
         }
       />
 
+      {/* Contenu selon l'onglet actif */}
       {activeTab === "sessions" ? (
         <FlatList
           data={displayData.data}
-          renderItem={renderActiveEntry}
+          renderItem={renderSessionEntry}
           keyExtractor={(item) => item.id}
           showsVerticalScrollIndicator={true}
           contentContainerStyle={[
@@ -771,4 +730,4 @@ const EnhancedSidebar = ({
   );
 };
 
-export { EnhancedSidebar };
+export { SimplifiedSidebar as EnhancedSidebar };

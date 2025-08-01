@@ -45,7 +45,17 @@ export interface ThemeDefinition {
 }
 
 // Types pour les noms de thèmes disponibles
-export type ThemeName = "ocean" | "forest" | "sunset" | "lavender" | "midnight";
+export type ThemeName =
+  | "ocean"
+  | "forest"
+  | "sunset"
+  | "lavender"
+  | "midnight"
+  | "papyrus"
+  | "matrix"
+  | "inkwell"
+  | "synthwave"
+  | "gothic";
 export type ThemeModeName = "light" | "dark";
 
 // Interface pour les informations d'un thème (utilisée dans les sélecteurs)
@@ -109,7 +119,18 @@ export interface ThemedStyles {
 export const isValidThemeName = (value: unknown): value is ThemeName => {
   return (
     typeof value === "string" &&
-    ["ocean", "forest", "sunset", "lavender", "midnight"].includes(value)
+    [
+      "ocean",
+      "forest",
+      "sunset",
+      "lavender",
+      "midnight",
+      "papyrus",
+      "matrix",
+      "inkwell",
+      "synthwave",
+      "gothic",
+    ].includes(value)
   );
 };
 
