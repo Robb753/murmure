@@ -1,11 +1,10 @@
-// hooks/useStorage.ts - Version corrigée
+// hooks/useStorage.ts - Version corrigée SANS confirmations
 import MurmureStorage, { MurmureEntry, StorageResult } from "@/app/lib/storage";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useErrorHandler } from "./useErrorHandler";
 import { useEntryActions } from "./useEntryActions";
 import { useTextProcessor } from "./useTextProcessor";
 
-// Types existants (inchangés)
 interface StorageState {
   currentEntry: MurmureEntry | null;
   entries: MurmureEntry[];
@@ -76,7 +75,7 @@ export const useStorage = () => {
     []
   );
 
-  // ✅ CORRECTION PRINCIPALE: Chargement sans création automatique
+  // Chargement des données
   const loadData = useCallback(async (): Promise<StorageResult> => {
     setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
@@ -114,7 +113,7 @@ export const useStorage = () => {
       let currentEntry: MurmureEntry | null = null;
       let textContent = "";
 
-      // ✅ Première fois: créer une entrée de bienvenue si aucune entrée
+      // Première fois: créer une entrée de bienvenue si aucune entrée
       if (isFirstLoadRef.current && allEntries.length === 0) {
         console.log(
           "🆕 Première utilisation - création de l'entrée de bienvenue"
@@ -138,7 +137,7 @@ export const useStorage = () => {
           }
         }
       }
-      // ✅ Chargement normal: essayer de récupérer l'entrée courante
+      // Chargement normal: essayer de récupérer l'entrée courante
       else if (allEntries.length > 0) {
         const currentEntryResult = await withErrorHandling(
           () => MurmureStorage.getCurrentEntryOrNull(),
@@ -154,8 +153,6 @@ export const useStorage = () => {
           textContent = currentEntry ? processText(currentEntry.content) : "";
         }
       }
-      // ✅ Cas où il n'y a aucune entrée et ce n'est pas le premier chargement
-      // Ne rien faire, laisser l'état vide
 
       setState((prev) => ({
         ...prev,
@@ -221,14 +218,14 @@ export const useStorage = () => {
     onCurrentEntryChanged: handleCurrentEntryChanged,
   });
 
-  // ✅ Sauvegarder seulement si il y a du contenu
+  // Sauvegarder seulement si il y a du contenu
   const saveCurrentEntry = useCallback(async (): Promise<StorageResult> => {
     if (!state.currentEntry) {
       return { success: false, error: "Aucune entrée courante" };
     }
 
     try {
-      // ✅ Éviter les sauvegardes d'entrées vides
+      // Éviter les sauvegardes d'entrées vides
       if (
         state.text.trim() === "" &&
         state.currentEntry.content.trim() === ""
@@ -280,7 +277,7 @@ export const useStorage = () => {
     }
   }, [state.currentEntry, state.text, sortEntriesByDate, withErrorHandling]);
 
-  // ✅ CORRECTION: Créer vraiment une nouvelle session
+  // Créer vraiment une nouvelle session
   const createNewSession = useCallback(async (): Promise<StorageResult> => {
     console.log("🆕 Création d'une nouvelle session...");
 
@@ -326,7 +323,8 @@ export const useStorage = () => {
     }
   }, [state.currentEntry, state.text, saveCurrentEntry, withErrorHandling]);
 
-  // ✅ Actions simplifiées avec corrections
+  // ✅ ACTIONS CORRIGÉES - SANS CONFIRMATIONS (gérées dans l'UI)
+
   const loadEntry = useCallback(
     async (entry: MurmureEntry): Promise<StorageResult> => {
       const success = await entryActions.loadEntry(
@@ -343,7 +341,7 @@ export const useStorage = () => {
     [entryActions, state.currentEntry, state.text, saveCurrentEntry]
   );
 
-  // ✅ Correction de la suppression pour éviter la création automatique
+  // ✅ CORRECTION: Suppression SANS confirmation
   const moveEntryToTrash = useCallback(
     async (entry: MurmureEntry): Promise<StorageResult> => {
       console.log("🗑️ Suppression de l'entrée:", entry.id);
@@ -365,43 +363,56 @@ export const useStorage = () => {
 
       return success
         ? { success: true }
-        : { success: false, error: "Opération annulée ou échouée" };
+        : { success: false, error: "Opération échouée" };
     },
     [entryActions, state.currentEntry?.id, createNewSession, handleDataChanged]
   );
 
-  // ✅ Autres actions corrigées (restent identiques mais utilisent les nouvelles méthodes)
+  // ✅ CORRECTION: Restauration SANS confirmation
   const restoreFromTrash = useCallback(
     async (entry: MurmureEntry): Promise<StorageResult> => {
+      console.log("♻️ Restauration de l'entrée:", entry.id);
+
       const success = await entryActions.restoreFromTrash(entry);
       return success
         ? { success: true }
-        : { success: false, error: "Opération annulée ou échouée" };
+        : { success: false, error: "Opération échouée" };
     },
     [entryActions]
   );
 
+  // ✅ CORRECTION: Suppression définitive SANS confirmation
   const deleteEntryPermanently = useCallback(
     async (entry: MurmureEntry): Promise<StorageResult> => {
+      console.log("💀 Suppression définitive de l'entrée:", entry.id);
+
       const success = await entryActions.deletePermanently(entry);
       return success
         ? { success: true }
-        : { success: false, error: "Opération annulée ou échouée" };
+        : { success: false, error: "Opération échouée" };
     },
     [entryActions]
   );
 
+  // ✅ CORRECTION: Vidage corbeille SANS confirmation
   const emptyTrash = useCallback(async (): Promise<StorageResult> => {
     if (state.trashEntries.length === 0) {
       return { success: false, error: "Corbeille déjà vide" };
     }
 
+    console.log(
+      "🧹 Vidage de la corbeille:",
+      state.trashEntries.length,
+      "entrées"
+    );
+
     const success = await entryActions.emptyTrash(state.trashEntries);
     return success
       ? { success: true }
-      : { success: false, error: "Opération annulée ou échouée" };
+      : { success: false, error: "Opération échouée" };
   }, [entryActions, state.trashEntries]);
 
+  // Partage d'entrée (sans confirmation)
   const shareEntry = useCallback(
     async (entry: MurmureEntry): Promise<StorageResult> => {
       const success = await entryActions.shareEntry(entry);
@@ -423,7 +434,7 @@ export const useStorage = () => {
     setIsPreviewModalVisible(false);
   }, []);
 
-  // ✅ Fonction pour mettre à jour le texte avec traitement
+  // Fonction pour mettre à jour le texte avec traitement
   const setText = useCallback(
     (newText: string) => {
       const processedText = processTextIncremental(
@@ -471,13 +482,13 @@ export const useStorage = () => {
     setState((prev) => ({ ...prev, wordCount }));
   }, [wordCount]);
 
-  // ✅ Effet pour la sauvegarde automatique CORRIGÉ
+  // Effet pour la sauvegarde automatique
   useEffect(() => {
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
 
-    // ✅ Sauvegarder seulement si :
+    // Sauvegarder seulement si :
     // 1. Il y a une entrée courante
     // 2. Le texte a changé par rapport à l'entrée
     // 3. Le texte n'est pas vide
@@ -535,7 +546,7 @@ export const useStorage = () => {
     loadEntry,
     shareEntry,
 
-    // Actions corbeille
+    // ✅ Actions corbeille SANS confirmations (confirmations gérées dans l'UI)
     moveEntryToTrash,
     restoreFromTrash,
     deleteEntryPermanently,

@@ -579,7 +579,6 @@ class MurmureStorage {
     }
   }
 
-  // Déplacer une entrée vers la corbeille
   static async moveToTrash(entryId: string): Promise<StorageResult> {
     if (!entryId || typeof entryId !== "string") {
       return this.handleError(

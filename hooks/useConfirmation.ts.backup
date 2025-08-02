@@ -114,11 +114,6 @@ export const useConfirmation = () => {
     []
   ); // ✅ Pas de dépendances car les fonctions sont statiques
 
-  // Fonctions de confirmation spécialisées avec dépendances stables
-  const confirmMoveToTrash = useCallback(
-    (itemName: string) => showConfirmation(presets.moveToTrash(itemName)),
-    [showConfirmation, presets]
-  );
 
   const confirmDeletePermanently = useCallback(
     (itemName: string) => showConfirmation(presets.deletePermantly(itemName)),
@@ -148,7 +143,6 @@ export const useConfirmation = () => {
     presets,
 
     // Fonctions spécialisées
-    confirmMoveToTrash,
     confirmDeletePermanently,
     confirmEmptyTrash,
     confirmRestoreFromTrash,

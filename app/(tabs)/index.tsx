@@ -227,160 +227,150 @@ const createWebHoverHandlers = (
   const exportEntry = useCallback(async (entry: MurmureEntry) => {
     try {
       const content = entry.content;
-      const filename = `murmure-${entry.date.replace(/\s/g, "-")}`;
       const wordCount = content
         .trim()
         .split(/\s+/)
         .filter((word) => word.length > 0).length;
 
-      if (Platform.OS === "web") {
-        // Web : téléchargement + copie presse-papier
-        const blob = new Blob([content], { type: "text/plain" });
+      // ✅ Créer un nom de fichier plus lisible
+      const date = new Date(entry.createdAt);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      const hours = String(date.getHours()).padStart(2, "0");
+      const minutes = String(date.getMinutes()).padStart(2, "0");
+
+      const filename = `murmure-${year}-${month}-${day}-${hours}h${minutes}`;
+      const dateText = `${day}/${month}/${year} à ${hours}:${minutes}`;
+
+      // ✅ Fonction pour télécharger (web uniquement)
+      const downloadFile = async () => {
+        if (Platform.OS !== "web") return;
+
+        const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
         a.download = `${filename}.txt`;
+        document.body.appendChild(a);
         a.click();
+        document.body.removeChild(a);
         URL.revokeObjectURL(url);
+      };
 
-        // Copie dans le presse-papier (web)
-        await navigator.clipboard.writeText(content);
-        Alert.alert(
-          "Exporté ✨",
-          `Fichier téléchargé et ${wordCount} mots copiés dans le presse-papier`
-        );
-      } else {
-        // Mobile : Menu d'options pour une meilleure UX
-        Alert.alert(
-          "Exporter votre texte",
-          `${wordCount} mots • ${entry.date}`,
-          [
-            {
-              text: "Copier le texte",
-              onPress: async () => {
-                try {
-                  await Clipboard.setStringAsync(content);
-                  if (Platform.OS !== "web") {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  }
-                  Alert.alert(
-                    "Copié ✨",
-                    `${wordCount} mots copiés dans le presse-papier`
-                  );
-                } catch (error) {
-                  const errorMessage =
-                    error instanceof Error ? error.message : "Erreur de copie";
-                  console.error("Erreur copie:", errorMessage);
-                  Alert.alert("Erreur", "Impossible de copier le texte");
-                }
+      // ✅ Fonction pour copier
+      const copyToClipboard = async () => {
+        try {
+          if (Platform.OS === "web") {
+            await navigator.clipboard.writeText(content);
+          } else {
+            await Clipboard.setStringAsync(content);
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          }
+
+          Alert.alert(
+            "Copié ✨",
+            `${wordCount} mots copiés dans le presse-papier`
+          );
+        } catch (error) {
+          console.error("Erreur copie:", error);
+          Alert.alert("Erreur", "Impossible de copier le texte");
+        }
+      };
+
+      // ✅ Fonction pour partager (mobile uniquement)
+      const shareContent = async () => {
+        if (Platform.OS === "web") {
+          // Sur web, fallback vers copie
+          await copyToClipboard();
+          return;
+        }
+
+        try {
+          if (await Sharing.isAvailableAsync()) {
+            await Sharing.shareAsync(`${content}\n\n— Écrit avec Murmure 🌙`);
+          } else {
+            await copyToClipboard();
+          }
+        } catch (error) {
+          console.error("Erreur partage:", error);
+          Alert.alert("Erreur", "Impossible de partager le texte");
+        }
+      };
+
+      // ✅ Fonction pour sauvegarder un fichier (mobile uniquement)
+      const saveFile = async () => {
+        if (Platform.OS === "web") {
+          Alert.alert(
+            "Non disponible",
+            "Sur web, utilisez 'Télécharger' pour sauvegarder un fichier."
+          );
+          return;
+        }
+
+        try {
+          const documentsDir = FileSystem.documentDirectory + "Murmure/";
+          const dirInfo = await FileSystem.getInfoAsync(documentsDir);
+
+          if (!dirInfo.exists) {
+            await FileSystem.makeDirectoryAsync(documentsDir, {
+              intermediates: true,
+            });
+          }
+
+          const fileUri = `${documentsDir}${filename}.txt`;
+          await FileSystem.writeAsStringAsync(fileUri, content);
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+          Alert.alert(
+            "Fichier créé ✨",
+            `Sauvegardé dans Documents/Murmure/\n${filename}.txt`
+          );
+        } catch (error) {
+          console.error("Erreur création fichier:", error);
+          Alert.alert("Erreur", "Impossible de créer le fichier");
+        }
+      };
+
+      // ✅ Menu unifié avec options adaptées à la plateforme
+      const menuOptions = [
+        {
+          text: "📋 Copier le texte",
+          onPress: copyToClipboard,
+          style: "default" as const,
+        },
+        ...(Platform.OS === "web"
+          ? [
+              {
+                text: "💾 Télécharger (.txt)",
+                onPress: downloadFile,
+                style: "default" as const,
               },
-              style: "default",
-            },
-            {
-              text: "Partager le texte",
-              onPress: async () => {
-                try {
-                  if (await Sharing.isAvailableAsync()) {
-                    await Sharing.shareAsync(
-                      `${content}\n\n— Écrit avec Murmure 🌙`
-                    );
-                  } else {
-                    await Clipboard.setStringAsync(content);
-                    Alert.alert(
-                      "Texte copié",
-                      "Le partage n'est pas disponible, le texte a été copié dans le presse-papier"
-                    );
-                  }
-                } catch (error) {
-                  const errorMessage =
-                    error instanceof Error
-                      ? error.message
-                      : "Erreur de partage";
-                  console.error("Erreur partage:", errorMessage);
-                  Alert.alert("Erreur", "Impossible de partager le texte");
-                }
+            ]
+          : [
+              {
+                text: "📱 Partager",
+                onPress: shareContent,
+                style: "default" as const,
               },
-              style: "default",
-            },
-            {
-              text: "Créer un fichier",
-              onPress: async () => {
-                try {
-                  // ✅ VÉRIFICATION PLATFORM ajoutée
-                  if (Platform.OS === "web") {
-                    Alert.alert(
-                      "Non supporté",
-                      "La création de fichiers n'est pas supportée sur web. Utilisez 'Copier le texte' à la place."
-                    );
-                    return;
-                  }
-
-                  // Créer le fichier dans le dossier Documents/Murmure
-                  const documentsDir =
-                    FileSystem.documentDirectory + "Murmure/";
-
-                  // Créer le dossier s'il n'existe pas
-                  const dirInfo = await FileSystem.getInfoAsync(documentsDir);
-                  if (!dirInfo.exists) {
-                    await FileSystem.makeDirectoryAsync(documentsDir, {
-                      intermediates: true,
-                    });
-                  }
-
-                  const fileUri = `${documentsDir}${filename}.txt`;
-                  await FileSystem.writeAsStringAsync(fileUri, content);
-
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-
-                  Alert.alert(
-                    "Fichier créé ✨",
-                    `Sauvegardé dans Documents/Murmure/\n${filename}.txt`,
-                    [
-                      {
-                        text: "OK",
-                        style: "default",
-                      },
-                      {
-                        text: "Ouvrir le dossier",
-                        onPress: async () => {
-                          try {
-                            if (Platform.OS === "android") {
-                              await Sharing.shareAsync(documentsDir);
-                            }
-                          } catch (error) {
-                            const errorMessage =
-                              error instanceof Error
-                                ? error.message
-                                : "Erreur de création";
-                            console.error(
-                              "Erreur création fichier:",
-                              errorMessage
-                            );
-                            Alert.alert(
-                              "Erreur",
-                              "Impossible de créer le fichier"
-                            );
-                          }
-                        },
-                        style: "default",
-                      },
-                    ]
-                  );
-                } catch (error) {
-                  console.error("Erreur création fichier:", error);
-                  Alert.alert("Erreur", "Impossible de créer le fichier");
-                }
+              {
+                text: "📁 Sauvegarder un fichier",
+                onPress: saveFile,
+                style: "default" as const,
               },
-              style: "default",
-            },
-            {
-              text: "Annuler",
-              style: "cancel",
-            },
-          ],
-          { cancelable: true }
-        );
-      }
+            ]),
+        {
+          text: "Annuler",
+          style: "cancel" as const,
+        },
+      ];
+
+      Alert.alert(
+        "Exporter votre texte",
+        `${wordCount} mots • ${dateText}`,
+        menuOptions,
+        { cancelable: true }
+      );
     } catch (error) {
       console.error("Erreur export:", error);
       Alert.alert("Erreur", "Impossible d'exporter le contenu");

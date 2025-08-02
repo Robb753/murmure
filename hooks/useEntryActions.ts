@@ -1,8 +1,7 @@
-// hooks/useEntryActions.ts - Version corrigée
+// hooks/useEntryActions.ts - Version vérifiée et optimisée
 import { useCallback } from "react";
 import { Share } from "react-native";
 import MurmureStorage, { MurmureEntry, StorageResult } from "@/app/lib/storage";
-import { useConfirmation } from "./useConfirmation";
 import { useErrorHandler } from "./useErrorHandler";
 
 export interface UseEntryActionsProps {
@@ -14,173 +13,182 @@ export const useEntryActions = ({
   onDataChanged,
   onCurrentEntryChanged,
 }: UseEntryActionsProps = {}) => {
-  const {
-    confirmMoveToTrash,
-    confirmDeletePermanently,
-    confirmEmptyTrash,
-    confirmRestoreFromTrash,
-  } = useConfirmation();
-
   const { withErrorHandling } = useErrorHandler();
 
-  // ✅ Déplacer vers la corbeille - version corrigée
+  // ✅ ACTIONS TECHNIQUES PURES - AUCUNE CONFIRMATION (gérées dans l'UI)
+
+  /**
+   * Déplace une entrée vers la corbeille
+   * Action technique pure sans confirmation
+   */
   const moveToTrash = useCallback(
     async (entry: MurmureEntry): Promise<boolean> => {
       try {
-        console.log("🗑️ Début déplacement vers corbeille:", entry.id);
+        console.log(
+          "🗑️ [useEntryActions] Début déplacement vers corbeille:",
+          entry.id
+        );
 
-        const itemName =
-          entry.previewText || entry.content.substring(0, 50) || "Session vide";
-        const confirmed = await confirmMoveToTrash(itemName);
-
-        if (!confirmed) {
-          console.log("❌ Déplacement annulé par l'utilisateur");
-          return false;
-        }
-
-        // Appel direct avec gestion d'erreur améliorée
         const result = await MurmureStorage.moveToTrash(entry.id);
 
         if (result.success) {
-          console.log("✅ Déplacement réussi");
+          console.log("✅ [useEntryActions] Déplacement réussi");
           onDataChanged?.();
           return true;
         } else {
-          console.error("❌ Échec déplacement:", result.error);
+          console.error(
+            "❌ [useEntryActions] Échec déplacement:",
+            result.error
+          );
           return false;
         }
       } catch (error) {
-        console.error("❌ Exception lors du déplacement:", error);
+        console.error(
+          "❌ [useEntryActions] Exception lors du déplacement:",
+          error
+        );
         return false;
       }
     },
-    [confirmMoveToTrash, onDataChanged]
+    [onDataChanged]
   );
 
-  // ✅ Restaurer depuis la corbeille - version corrigée
+  /**
+   * Restaure une entrée depuis la corbeille
+   * Action technique pure sans confirmation
+   */
   const restoreFromTrash = useCallback(
     async (entry: MurmureEntry): Promise<boolean> => {
       try {
-        console.log("♻️ Début restauration:", entry.id);
-
-        const itemName =
-          entry.previewText || entry.content.substring(0, 50) || "Session vide";
-        const confirmed = await confirmRestoreFromTrash(itemName);
-
-        if (!confirmed) {
-          console.log("❌ Restauration annulée par l'utilisateur");
-          return false;
-        }
+        console.log("♻️ [useEntryActions] Début restauration:", entry.id);
 
         const result = await MurmureStorage.restoreFromTrash(entry.id);
 
         if (result.success) {
-          console.log("✅ Restauration réussie");
+          console.log("✅ [useEntryActions] Restauration réussie");
           onDataChanged?.();
           return true;
         } else {
-          console.error("❌ Échec restauration:", result.error);
+          console.error(
+            "❌ [useEntryActions] Échec restauration:",
+            result.error
+          );
           return false;
         }
       } catch (error) {
-        console.error("❌ Exception lors de la restauration:", error);
+        console.error(
+          "❌ [useEntryActions] Exception lors de la restauration:",
+          error
+        );
         return false;
       }
     },
-    [confirmRestoreFromTrash, onDataChanged]
+    [onDataChanged]
   );
 
-  // ✅ Supprimer définitivement - version corrigée
+  /**
+   * Supprime définitivement une entrée
+   * Action technique pure sans confirmation
+   */
   const deletePermanently = useCallback(
     async (entry: MurmureEntry): Promise<boolean> => {
       try {
-        console.log("💀 Début suppression définitive:", entry.id);
-
-        const itemName =
-          entry.previewText || entry.content.substring(0, 50) || "Session vide";
-        const confirmed = await confirmDeletePermanently(itemName);
-
-        if (!confirmed) {
-          console.log("❌ Suppression annulée par l'utilisateur");
-          return false;
-        }
+        console.log(
+          "💀 [useEntryActions] Début suppression définitive:",
+          entry.id
+        );
 
         const result = await MurmureStorage.deleteEntryPermanently(entry.id);
 
         if (result.success) {
-          console.log("✅ Suppression définitive réussie");
+          console.log("✅ [useEntryActions] Suppression définitive réussie");
           onDataChanged?.();
           return true;
         } else {
-          console.error("❌ Échec suppression définitive:", result.error);
+          console.error(
+            "❌ [useEntryActions] Échec suppression définitive:",
+            result.error
+          );
           return false;
         }
       } catch (error) {
-        console.error("❌ Exception lors de la suppression définitive:", error);
+        console.error(
+          "❌ [useEntryActions] Exception lors de la suppression définitive:",
+          error
+        );
         return false;
       }
     },
-    [confirmDeletePermanently, onDataChanged]
+    [onDataChanged]
   );
 
-  // ✅ Vider la corbeille - version corrigée
+  /**
+   * Vide complètement la corbeille
+   * Action technique pure sans confirmation
+   */
   const emptyTrash = useCallback(
     async (trashEntries: MurmureEntry[]): Promise<boolean> => {
       try {
         if (trashEntries.length === 0) {
-          console.log("📭 Corbeille déjà vide");
+          console.log("📭 [useEntryActions] Corbeille déjà vide");
           return false;
         }
 
         console.log(
-          "🧹 Début vidage corbeille:",
+          "🧹 [useEntryActions] Début vidage corbeille:",
           trashEntries.length,
           "entrées"
         );
 
-        const confirmed = await confirmEmptyTrash(trashEntries.length);
-
-        if (!confirmed) {
-          console.log("❌ Vidage annulé par l'utilisateur");
-          return false;
-        }
-
         const result = await MurmureStorage.emptyTrash();
 
         if (result.success) {
-          console.log("✅ Vidage corbeille réussi");
+          console.log("✅ [useEntryActions] Vidage corbeille réussi");
           onDataChanged?.();
           return true;
         } else {
-          console.error("❌ Échec vidage corbeille:", result.error);
+          console.error(
+            "❌ [useEntryActions] Échec vidage corbeille:",
+            result.error
+          );
           return false;
         }
       } catch (error) {
-        console.error("❌ Exception lors du vidage:", error);
+        console.error("❌ [useEntryActions] Exception lors du vidage:", error);
         return false;
       }
     },
-    [confirmEmptyTrash, onDataChanged]
+    [onDataChanged]
   );
 
-  // Partager une entrée (inchangé)
+  /**
+   * Partage une entrée via les options de partage du système
+   * Action sans confirmation (immédiate)
+   */
   const shareEntry = useCallback(
     async (entry: MurmureEntry): Promise<boolean> => {
       try {
+        console.log("📤 [useEntryActions] Début partage:", entry.id);
+
         await Share.share({
           message: `${entry.content}\n\n— Écrit avec Murmure 🌙`,
           title: `Session du ${entry.date}`,
         });
+
+        console.log("✅ [useEntryActions] Partage réussi");
         return true;
       } catch (error) {
-        console.error("Erreur partage:", error);
+        console.error("❌ [useEntryActions] Erreur partage:", error);
         return false;
       }
     },
     []
   );
 
-  // ✅ Charger une entrée - version corrigée pour éviter les créations automatiques
+  /**
+   * Charge une entrée existante en sauvegardant l'actuelle si nécessaire
+   * Action avec sauvegarde automatique
+   */
   const loadEntry = useCallback(
     async (
       entry: MurmureEntry,
@@ -189,42 +197,51 @@ export const useEntryActions = ({
       saveCurrentFn?: () => Promise<StorageResult>
     ): Promise<boolean> => {
       try {
-        console.log("📂 Chargement de l'entrée:", entry.id);
+        console.log("📂 [useEntryActions] Chargement de l'entrée:", entry.id);
 
-        // ✅ Sauvegarder l'entrée courante SEULEMENT si elle a du contenu
+        // ✅ Sauvegarde automatique si nécessaire
         if (
           currentEntry &&
           currentText.trim() &&
           currentText !== currentEntry.content &&
           saveCurrentFn
         ) {
-          console.log("💾 Sauvegarde avant chargement");
+          console.log("💾 [useEntryActions] Sauvegarde avant chargement");
           const result = await saveCurrentFn();
           if (!result.success) {
-            console.warn("Échec sauvegarde avant chargement:", result.error);
+            console.warn(
+              "⚠️ [useEntryActions] Échec sauvegarde avant chargement:",
+              result.error
+            );
           }
         }
 
         // Changer l'entrée courante
         onCurrentEntryChanged?.(entry);
 
-        // Sauvegarder l'ID en arrière-plan
+        // Sauvegarder l'ID de l'entrée courante
         const saveIdResult = await MurmureStorage.saveCurrentEntryId(entry.id);
         if (!saveIdResult.success) {
-          console.warn("⚠️ Échec sauvegarde ID:", saveIdResult.error);
+          console.warn(
+            "⚠️ [useEntryActions] Échec sauvegarde ID:",
+            saveIdResult.error
+          );
         }
 
-        console.log("✅ Entrée chargée avec succès");
+        console.log("✅ [useEntryActions] Entrée chargée avec succès");
         return true;
       } catch (error) {
-        console.error("Erreur chargement entrée:", error);
+        console.error("❌ [useEntryActions] Erreur chargement entrée:", error);
         return false;
       }
     },
     [onCurrentEntryChanged]
   );
 
-  // ✅ Créer une nouvelle entrée - version corrigée
+  /**
+   * Crée une nouvelle entrée en sauvegardant l'actuelle si nécessaire
+   * Action avec sauvegarde automatique
+   */
   const createNewEntry = useCallback(
     async (
       currentEntry: MurmureEntry | null,
@@ -232,43 +249,52 @@ export const useEntryActions = ({
       saveCurrentFn?: () => Promise<StorageResult>
     ): Promise<MurmureEntry | null> => {
       try {
-        console.log("🆕 Création d'une nouvelle entrée...");
+        console.log("🆕 [useEntryActions] Création d'une nouvelle entrée...");
 
-        // ✅ Sauvegarder l'entrée courante SEULEMENT si elle a du contenu
+        // ✅ Sauvegarde automatique si nécessaire
         if (currentEntry && currentText.trim() && saveCurrentFn) {
-          console.log("💾 Sauvegarde avant création nouvelle entrée");
+          console.log(
+            "💾 [useEntryActions] Sauvegarde avant création nouvelle entrée"
+          );
           const result = await saveCurrentFn();
           if (!result.success) {
             console.warn(
-              "Échec sauvegarde avant nouvelle entrée:",
+              "⚠️ [useEntryActions] Échec sauvegarde avant nouvelle entrée:",
               result.error
             );
           }
         }
 
-        // ✅ Utiliser la nouvelle méthode qui ne sauvegarde pas automatiquement
+        // Créer la nouvelle entrée
         const result = await withErrorHandling(
           () => MurmureStorage.startNewSession(),
           "création nouvelle entrée"
         );
 
         if (result) {
-          console.log("✅ Nouvelle entrée créée:", result.id);
+          console.log("✅ [useEntryActions] Nouvelle entrée créée:", result.id);
           onCurrentEntryChanged?.(result);
           onDataChanged?.();
           return result;
         }
 
+        console.error("❌ [useEntryActions] Échec création nouvelle entrée");
         return null;
       } catch (error) {
-        console.error("Erreur création entrée:", error);
+        console.error(
+          "❌ [useEntryActions] Exception lors de la création:",
+          error
+        );
         return null;
       }
     },
     [withErrorHandling, onCurrentEntryChanged, onDataChanged]
   );
 
-  // Obtenir le nombre de jours jusqu'à suppression (inchangé)
+  /**
+   * Obtient le nombre de jours restants avant suppression définitive
+   * Fonction utilitaire pure
+   */
   const getDaysUntilDeletion = useCallback(
     (entry: MurmureEntry): number | null => {
       return MurmureStorage.getDaysUntilDeletion(entry);
@@ -277,16 +303,18 @@ export const useEntryActions = ({
   );
 
   return {
-    // Actions principales
+    // ✅ Actions principales - AUCUNE CONFIRMATION (gérées dans l'UI)
     moveToTrash,
     restoreFromTrash,
     deletePermanently,
     emptyTrash,
+
+    // ✅ Actions sans confirmation
     shareEntry,
     loadEntry,
     createNewEntry,
 
-    // Utilitaires
+    // ✅ Utilitaires
     getDaysUntilDeletion,
   };
 };

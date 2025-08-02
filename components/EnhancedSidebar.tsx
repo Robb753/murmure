@@ -16,7 +16,6 @@ import { SearchBar } from "@/components/SearchBar";
 import { HighlightedText } from "@/components/HighlightedText";
 import { formatEntryDate, getDateColorIntensity } from "@/utils/dateUtils";
 
-// ✅ Interface simplifiée - suppression des props inutiles
 interface SimplifiedSidebarProps {
   currentTheme: any;
   currentEntry: MurmureEntry | null;
@@ -31,19 +30,17 @@ interface SimplifiedSidebarProps {
   onDeletePermanently: (entry: MurmureEntry) => void;
   onEmptyTrash: () => void;
   getDaysUntilDeletion: (entry: MurmureEntry) => number | null;
-  // ✅ Nouvelle fonction d'export
   onExportEntry: (entry: MurmureEntry) => void;
 }
 
 type SidebarTab = "sessions" | "trash";
 
-// ✅ Composant Session simplifié - clic direct = chargement
+// ✅ Composant Session avec confirmations intégrées
 const SessionEntry = ({
   item,
   currentTheme,
   currentEntry,
   onLoadEntry,
-  onShareEntry,
   onMoveToTrash,
   onExportEntry,
   isSearchResult = false,
@@ -53,7 +50,6 @@ const SessionEntry = ({
   currentTheme: any;
   currentEntry: MurmureEntry | null;
   onLoadEntry: (entry: MurmureEntry) => void;
-  onShareEntry: (entry: MurmureEntry) => void;
   onMoveToTrash: (entry: MurmureEntry) => void;
   onExportEntry: (entry: MurmureEntry) => void;
   isSearchResult?: boolean;
@@ -62,6 +58,7 @@ const SessionEntry = ({
   const isActive = currentEntry?.id === item.id;
   const isEmpty = item.content.trim().length === 0;
   const [menuVisible, setMenuVisible] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const formattedDate = formatEntryDate(item.createdAt, {
     relative: true,
@@ -71,24 +68,77 @@ const SessionEntry = ({
 
   const dateColorIntensity = getDateColorIntensity(item.createdAt);
 
-  // ✅ Handlers simplifiés
+  // ✅ Export sans confirmation (action directe)
   const handleExport = async () => {
+    if (isProcessing) return; // ✅ Protection ajoutée
+
+    setIsProcessing(true);
     try {
       onExportEntry(item);
       setMenuVisible(false);
     } catch (error) {
-      console.error("❌ Erreur export:", error);
-      setMenuVisible(false);
+      console.error("❌ [SessionEntry] Erreur export:", error);
+    } finally {
+      setIsProcessing(false); // ✅ Toujours débloquer
     }
   };
 
+  // ✅ CONFIRMATION INTÉGRÉE pour la suppression
   const handleDelete = async () => {
+    // ✅ Protection : éviter les appels multiples
+    if (isProcessing) {
+      console.log("🛡️ [SessionEntry] Action déjà en cours, ignorée");
+      return;
+    }
+
+    setMenuVisible(false);
+    setIsProcessing(true); // ✅ Bloquer les nouveaux appels
+
     try {
-      await onMoveToTrash(item);
-      setMenuVisible(false);
+      const itemName =
+        item.previewText || item.content.substring(0, 50) || "Session vide";
+
+      if (Platform.OS === "web") {
+        const confirmed = window.confirm(
+          `Déplacer vers la corbeille ?\n\n"${itemName}"\n\nSuppression définitive dans 30 jours.`
+        );
+        if (!confirmed) {
+          setIsProcessing(false); // ✅ Débloquer si annulé
+          return;
+        }
+
+        await onMoveToTrash(item);
+      } else {
+        Alert.alert(
+          "Déplacer vers la corbeille ?",
+          `Déplacer "${itemName}" vers la corbeille ?\n\nSuppression définitive dans 30 jours.`,
+          [
+            {
+              text: "Annuler",
+              style: "cancel",
+              onPress: () => setIsProcessing(false), // ✅ Débloquer si annulé
+            },
+            {
+              text: "Déplacer",
+              style: "destructive",
+              onPress: async () => {
+                try {
+                  await onMoveToTrash(item);
+                } catch (error) {
+                  console.error("❌ [SessionEntry] Erreur suppression:", error);
+                } finally {
+                  setIsProcessing(false); // ✅ Débloquer après action
+                }
+              },
+            },
+          ]
+        );
+        return; // ✅ Sortir ici pour mobile (async)
+      }
     } catch (error) {
-      console.error("❌ Erreur suppression:", error);
-      setMenuVisible(false);
+      console.error("❌ [SessionEntry] Erreur dans handleDelete:", error);
+    } finally {
+      setIsProcessing(false); // ✅ Débloquer après action (web)
     }
   };
 
@@ -101,7 +151,6 @@ const SessionEntry = ({
 
   return (
     <View style={sidebarStyles.sidebarEntryContainer}>
-      {/* ✅ Clic direct = chargement (plus de preview) */}
       <TouchableOpacity
         style={[
           sidebarStyles.sidebarEntry,
@@ -114,10 +163,12 @@ const SessionEntry = ({
               : `${currentTheme.accent}${Math.round(dateColorIntensity * 255)
                   .toString(16)
                   .padStart(2, "0")}`,
+            opacity: isProcessing ? 0.6 : 1, // ✅ Indication visuelle pendant traitement
           },
         ]}
-        onPress={() => onLoadEntry(item)}
+        onPress={() => !isProcessing && onLoadEntry(item)}
         onLongPress={Platform.OS !== "web" ? handleLongPress : undefined}
+        disabled={isProcessing}
       >
         <Text
           style={[
@@ -169,7 +220,7 @@ const SessionEntry = ({
         </Text>
       </TouchableOpacity>
 
-      {/* ✅ Menu ultra-simple : 2 actions max */}
+      {/* Menu avec confirmations intégrées */}
       {Platform.OS === "web" && (
         <Menu
           visible={menuVisible}
@@ -188,7 +239,7 @@ const SessionEntry = ({
           }}
           anchor={
             <TouchableOpacity
-              onPress={() => setMenuVisible(true)}
+              onPress={() => !isProcessing && setMenuVisible(true)}
               style={[
                 sidebarStyles.webActionsButtonExternal,
                 {
@@ -196,6 +247,7 @@ const SessionEntry = ({
                   borderColor: currentTheme.border,
                 },
               ]}
+              disabled={isProcessing}
             >
               <Text
                 style={[
@@ -211,11 +263,13 @@ const SessionEntry = ({
           <Menu.Item
             onPress={handleExport}
             title="📤 Export"
+            disabled={isProcessing}
             titleStyle={{ color: currentTheme.text, fontSize: 14 }}
           />
           <Menu.Item
             onPress={handleDelete}
             title="🗑️ Supprimer"
+            disabled={isProcessing}
             titleStyle={{ color: "#ef4444", fontSize: 14 }}
           />
         </Menu>
@@ -224,7 +278,7 @@ const SessionEntry = ({
   );
 };
 
-// ✅ Composant Corbeille simplifié
+// ✅ Composant Corbeille avec confirmations intégrées
 const TrashEntry = ({
   item,
   currentTheme,
@@ -246,6 +300,7 @@ const TrashEntry = ({
 }) => {
   const isEmpty = item.content.trim().length === 0;
   const [menuVisible, setMenuVisible] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const daysLeft = getDaysUntilDeletion(item);
 
   const formattedDate = formatEntryDate(item.createdAt, {
@@ -254,16 +309,118 @@ const TrashEntry = ({
     fullFormat: false,
   });
 
-  // ✅ Handler restore simplifié
+  const dateColorIntensity = getDateColorIntensity(item.createdAt);
+
+  // ✅ CONFIRMATION INTÉGRÉE pour la restauration
   const handleRestore = async () => {
-    await onRestoreFromTrash(item);
+    if (isProcessing) return;
+
     setMenuVisible(false);
+    setIsProcessing(true);
+
+    try {
+      const itemName =
+        item.previewText || item.content.substring(0, 50) || "Session vide";
+
+      if (Platform.OS === "web") {
+        const confirmed = window.confirm(
+          `Restaurer "${itemName}" depuis la corbeille ?`
+        );
+        if (!confirmed) {
+          setIsProcessing(false);
+          return;
+        }
+
+        await onRestoreFromTrash(item);
+      } else {
+        Alert.alert(
+          "Restaurer depuis la corbeille ?",
+          `Restaurer "${itemName}" depuis la corbeille ?`,
+          [
+            {
+              text: "Annuler",
+              style: "cancel",
+              onPress: () => setIsProcessing(false),
+            },
+            {
+              text: "Restaurer",
+              onPress: async () => {
+                try {
+                  await onRestoreFromTrash(item);
+                } catch (error) {
+                  console.error("❌ [TrashEntry] Erreur restauration:", error);
+                } finally {
+                  setIsProcessing(false);
+                }
+              },
+            },
+          ]
+        );
+        return;
+      }
+    } catch (error) {
+      console.error("❌ [TrashEntry] Erreur restauration:", error);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
-  // ✅ Handler suppression SANS confirmation - la confirmation est gérée par le parent
+  // ✅ CONFIRMATION INTÉGRÉE pour la suppression définitive
   const handleDeletePermanently = async () => {
-    setMenuVisible(false); // Fermer le menu d'abord
-    await onDeletePermanently(item); // Laisser le parent gérer la confirmation
+    if (isProcessing) return;
+
+    setMenuVisible(false);
+    setIsProcessing(true);
+
+    try {
+      const itemName =
+        item.previewText || item.content.substring(0, 50) || "Session vide";
+
+      if (Platform.OS === "web") {
+        const confirmed = window.confirm(
+          `Supprimer définitivement ?\n\n"${itemName}"\n\n⚠️ Cette action est irréversible !`
+        );
+        if (!confirmed) {
+          setIsProcessing(false);
+          return;
+        }
+
+        await onDeletePermanently(item);
+      } else {
+        Alert.alert(
+          "Suppression définitive ?",
+          `Supprimer définitivement ?\n\n"${itemName}"\n\n⚠️ Cette action est irréversible !`,
+          [
+            {
+              text: "Annuler",
+              style: "cancel",
+              onPress: () => setIsProcessing(false),
+            },
+            {
+              text: "Supprimer définitivement",
+              style: "destructive",
+              onPress: async () => {
+                try {
+                  await onDeletePermanently(item);
+                } catch (error) {
+                  console.error(
+                    "❌ [TrashEntry] Erreur suppression définitive:",
+                    error
+                  );
+                } finally {
+                  setIsProcessing(false);
+                }
+              },
+            },
+          ]
+        );
+        return;
+      }
+    } catch (error) {
+      console.error("❌ [TrashEntry] Erreur suppression définitive:", error);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleLongPress = () => {
@@ -275,18 +432,22 @@ const TrashEntry = ({
 
   return (
     <View style={sidebarStyles.sidebarEntryContainer}>
-      {/* ✅ Clic = chargement en lecture seule */}
       <TouchableOpacity
         style={[
           sidebarStyles.sidebarEntry,
           {
             backgroundColor: "transparent",
-            borderLeftColor: "#ef4444",
-            opacity: 0.7,
+            borderLeftColor: `${currentTheme.accent}${Math.round(
+              dateColorIntensity * 255
+            )
+              .toString(16)
+              .padStart(2, "0")}`,
+            opacity: isProcessing ? 0.6 : 1, // ✅ Indication visuelle pendant traitement
           },
         ]}
-        onPress={() => onLoadEntry(item)}
+        onPress={() => !isProcessing && onLoadEntry(item)}
         onLongPress={Platform.OS !== "web" ? handleLongPress : undefined}
+        disabled={isProcessing}
       >
         <View
           style={{
@@ -366,7 +527,7 @@ const TrashEntry = ({
         </View>
       </TouchableOpacity>
 
-      {/* ✅ Menu ultra-simple : 2 actions max */}
+      {/* Menu avec confirmations intégrées */}
       {Platform.OS === "web" && (
         <Menu
           visible={menuVisible}
@@ -385,7 +546,7 @@ const TrashEntry = ({
           }}
           anchor={
             <TouchableOpacity
-              onPress={() => setMenuVisible(true)}
+              onPress={() => !isProcessing && setMenuVisible(true)}
               style={[
                 sidebarStyles.webActionsButtonExternal,
                 {
@@ -393,6 +554,7 @@ const TrashEntry = ({
                   borderColor: "#ef4444",
                 },
               ]}
+              disabled={isProcessing}
             >
               <Text
                 style={[sidebarStyles.webActionsIcon, { color: "#ef4444" }]}
@@ -405,11 +567,13 @@ const TrashEntry = ({
           <Menu.Item
             onPress={handleRestore}
             title="♻️ Restaurer"
+            disabled={isProcessing}
             titleStyle={{ color: "#10b981", fontSize: 14 }}
           />
           <Menu.Item
             onPress={handleDeletePermanently}
             title="💀 Supprimer définitivement"
+            disabled={isProcessing}
             titleStyle={{ color: "#ef4444", fontSize: 14 }}
           />
         </Menu>
@@ -418,7 +582,7 @@ const TrashEntry = ({
   );
 };
 
-// ✅ Composant principal ultra-simplifié
+// ✅ Composant principal avec confirmation intégrée pour vider la corbeille
 const SimplifiedSidebar = ({
   currentTheme,
   currentEntry,
@@ -436,17 +600,18 @@ const SimplifiedSidebar = ({
   onExportEntry,
 }: SimplifiedSidebarProps) => {
   const [activeTab, setActiveTab] = useState<SidebarTab>("sessions");
+  const [isEmptyingTrash, setIsEmptyingTrash] = useState(false);
 
-  // ✅ Options de recherche simplifiées
+  // Options de recherche simplifiées
   const searchOptions = useMemo(
     () => ({
       searchInContent: true,
       searchInPreview: true,
-      searchInDate: false, // Supprimé pour simplifier
+      searchInDate: false,
       caseSensitive: false,
       minScore: 0.1,
-      minQueryLength: 2, // Réduit à 2 caractères
-      searchWholeWordsOnly: false, // Simplifié
+      minQueryLength: 2,
+      searchWholeWordsOnly: false,
     }),
     []
   );
@@ -489,12 +654,15 @@ const SimplifiedSidebar = ({
     }
   }, [activeTab, sessionsSearch, trashSearch, entries, trashEntries]);
 
-  const handleEmptyTrash = () => {
-    if (trashEntries.length === 0) return;
+  // ✅ CONFIRMATION INTÉGRÉE pour vider la corbeille
+  const handleEmptyTrash = async () => {
+    if (trashEntries.length === 0 || isEmptyingTrash) return;
 
-    if (Platform.OS === "web") {
-      if (
-        window.confirm(
+    setIsEmptyingTrash(true);
+
+    try {
+      if (Platform.OS === "web") {
+        const confirmed = window.confirm(
           `Vider la corbeille ?\n\n${trashEntries.length} session${
             trashEntries.length > 1 ? "s" : ""
           } sera${
@@ -502,38 +670,63 @@ const SimplifiedSidebar = ({
           } définitivement supprimée${
             trashEntries.length > 1 ? "s" : ""
           }.\n\n⚠️ Cette action est irréversible !`
-        )
-      ) {
-        onEmptyTrash();
+        );
+        if (!confirmed) {
+          setIsEmptyingTrash(false);
+          return;
+        }
+
+        await onEmptyTrash();
+      } else {
+        Alert.alert(
+          "Vider la corbeille ?",
+          `${trashEntries.length} session${
+            trashEntries.length > 1 ? "s" : ""
+          } sera${
+            trashEntries.length > 1 ? "ont" : ""
+          } définitivement supprimée${
+            trashEntries.length > 1 ? "s" : ""
+          }.\n\n⚠️ Cette action est irréversible !`,
+          [
+            {
+              text: "Annuler",
+              style: "cancel",
+              onPress: () => setIsEmptyingTrash(false),
+            },
+            {
+              text: "Vider la corbeille",
+              style: "destructive",
+              onPress: async () => {
+                try {
+                  await onEmptyTrash();
+                } catch (error) {
+                  console.error(
+                    "❌ [SimplifiedSidebar] Erreur vidage corbeille:",
+                    error
+                  );
+                } finally {
+                  setIsEmptyingTrash(false);
+                }
+              },
+            },
+          ]
+        );
+        return;
       }
-    } else {
-      Alert.alert(
-        "Vider la corbeille ?",
-        `${trashEntries.length} session${
-          trashEntries.length > 1 ? "s" : ""
-        } sera${trashEntries.length > 1 ? "ont" : ""} définitivement supprimée${
-          trashEntries.length > 1 ? "s" : ""
-        }.\n\n⚠️ Cette action est irréversible !`,
-        [
-          { text: "Annuler", style: "cancel" },
-          {
-            text: "Vider la corbeille",
-            style: "destructive",
-            onPress: onEmptyTrash,
-          },
-        ]
-      );
+    } catch (error) {
+      console.error("❌ [SimplifiedSidebar] Erreur vidage corbeille:", error);
+    } finally {
+      setIsEmptyingTrash(false);
     }
   };
 
-  // ✅ Render functions simplifiées
+  // Render functions
   const renderSessionEntry = ({ item }: { item: any }) => (
     <SessionEntry
       item={item}
       currentTheme={currentTheme}
       currentEntry={currentEntry}
       onLoadEntry={onLoadEntry}
-      onShareEntry={onShareEntry}
       onMoveToTrash={onMoveToTrash}
       onExportEntry={onExportEntry}
       isSearchResult={item.isSearchResult}
@@ -564,7 +757,7 @@ const SimplifiedSidebar = ({
         },
       ]}
     >
-      {/* ✅ Header simplifié */}
+      {/* Header */}
       <View
         style={[
           sidebarStyles.sidebarHeader,
@@ -635,7 +828,7 @@ const SimplifiedSidebar = ({
         </TouchableOpacity>
       </View>
 
-      {/* Barre de recherche simplifiée */}
+      {/* Barre de recherche */}
       <SearchBar
         currentTheme={currentTheme}
         searchQuery={displayData.search.searchQuery}
@@ -685,8 +878,9 @@ const SimplifiedSidebar = ({
             >
               <TouchableOpacity
                 onPress={handleEmptyTrash}
+                disabled={isEmptyingTrash}
                 style={{
-                  backgroundColor: "#ef4444",
+                  backgroundColor: isEmptyingTrash ? "#ef444460" : "#ef4444",
                   paddingHorizontal: 16,
                   paddingVertical: 8,
                   borderRadius: 8,
@@ -696,7 +890,9 @@ const SimplifiedSidebar = ({
                 <Text
                   style={{ color: "white", fontSize: 14, fontWeight: "500" }}
                 >
-                  vider la corbeille
+                  {isEmptyingTrash
+                    ? "vidage en cours..."
+                    : "vider la corbeille"}
                 </Text>
               </TouchableOpacity>
             </View>
