@@ -35,7 +35,7 @@ interface SimplifiedSidebarProps {
 
 type SidebarTab = "sessions" | "trash";
 
-// ✅ Composant Session avec confirmations intégrées
+// ✅ Composant Session unifié pour tous les plateformes
 const SessionEntry = ({
   item,
   currentTheme,
@@ -68,10 +68,9 @@ const SessionEntry = ({
 
   const dateColorIntensity = getDateColorIntensity(item.createdAt);
 
-  // ✅ Export sans confirmation (action directe)
+  // ✅ Export unifié
   const handleExport = async () => {
-    if (isProcessing) return; // ✅ Protection ajoutée
-
+    if (isProcessing) return;
     setIsProcessing(true);
     try {
       onExportEntry(item);
@@ -79,20 +78,15 @@ const SessionEntry = ({
     } catch (error) {
       console.error("❌ [SessionEntry] Erreur export:", error);
     } finally {
-      setIsProcessing(false); // ✅ Toujours débloquer
+      setIsProcessing(false);
     }
   };
 
-  // ✅ CONFIRMATION INTÉGRÉE pour la suppression
+  // ✅ Suppression avec confirmation unifiée
   const handleDelete = async () => {
-    // ✅ Protection : éviter les appels multiples
-    if (isProcessing) {
-      console.log("🛡️ [SessionEntry] Action déjà en cours, ignorée");
-      return;
-    }
-
+    if (isProcessing) return;
     setMenuVisible(false);
-    setIsProcessing(true); // ✅ Bloquer les nouveaux appels
+    setIsProcessing(true);
 
     try {
       const itemName =
@@ -103,12 +97,12 @@ const SessionEntry = ({
           `Déplacer vers la corbeille ?\n\n"${itemName}"\n\nSuppression définitive dans 30 jours.`
         );
         if (!confirmed) {
-          setIsProcessing(false); // ✅ Débloquer si annulé
+          setIsProcessing(false);
           return;
         }
-
         await onMoveToTrash(item);
       } else {
+        // ✅ Android/iOS - Menu natif unifié
         Alert.alert(
           "Déplacer vers la corbeille ?",
           `Déplacer "${itemName}" vers la corbeille ?\n\nSuppression définitive dans 30 jours.`,
@@ -116,7 +110,7 @@ const SessionEntry = ({
             {
               text: "Annuler",
               style: "cancel",
-              onPress: () => setIsProcessing(false), // ✅ Débloquer si annulé
+              onPress: () => setIsProcessing(false),
             },
             {
               text: "Déplacer",
@@ -127,26 +121,43 @@ const SessionEntry = ({
                 } catch (error) {
                   console.error("❌ [SessionEntry] Erreur suppression:", error);
                 } finally {
-                  setIsProcessing(false); // ✅ Débloquer après action
+                  setIsProcessing(false);
                 }
               },
             },
           ]
         );
-        return; // ✅ Sortir ici pour mobile (async)
+        return;
       }
     } catch (error) {
       console.error("❌ [SessionEntry] Erreur dans handleDelete:", error);
     } finally {
-      setIsProcessing(false); // ✅ Débloquer après action (web)
+      setIsProcessing(false);
     }
   };
 
+  // ✅ Menu contextuel Android unifié
   const handleLongPress = () => {
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+      // ✅ Menu Android natif identique au design
+      Alert.alert("Actions", `Session du ${formattedDate}`, [
+        {
+          text: "📤 Exporter",
+          onPress: handleExport,
+        },
+        {
+          text: "🗑️ Supprimer",
+          style: "destructive",
+          onPress: handleDelete,
+        },
+        {
+          text: "Annuler",
+          style: "cancel",
+        },
+      ]);
     }
-    setMenuVisible(true);
   };
 
   return (
@@ -163,12 +174,26 @@ const SessionEntry = ({
               : `${currentTheme.accent}${Math.round(dateColorIntensity * 255)
                   .toString(16)
                   .padStart(2, "0")}`,
-            opacity: isProcessing ? 0.6 : 1, // ✅ Indication visuelle pendant traitement
+            opacity: isProcessing ? 0.6 : 1,
+            // ✅ Design unifié Android
+            ...(Platform.OS === "android" && {
+              elevation: isActive ? 2 : 0,
+              borderRadius: 8,
+              marginHorizontal: 4,
+              marginVertical: 2,
+            }),
           },
         ]}
         onPress={() => !isProcessing && onLoadEntry(item)}
-        onLongPress={Platform.OS !== "web" ? handleLongPress : undefined}
+        onLongPress={handleLongPress}
         disabled={isProcessing}
+        // ✅ Feedback Android unifié
+        {...(Platform.OS === "android" && {
+          android_ripple: {
+            color: currentTheme.accent + "30",
+            borderless: false,
+          },
+        })}
       >
         <Text
           style={[
@@ -220,7 +245,7 @@ const SessionEntry = ({
         </Text>
       </TouchableOpacity>
 
-      {/* Menu avec confirmations intégrées */}
+      {/* ✅ Menu Web uniquement */}
       {Platform.OS === "web" && (
         <Menu
           visible={menuVisible}
@@ -278,7 +303,7 @@ const SessionEntry = ({
   );
 };
 
-// ✅ Composant Corbeille avec confirmations intégrées
+// ✅ Composant Corbeille unifié pour tous les plateformes
 const TrashEntry = ({
   item,
   currentTheme,
@@ -311,10 +336,9 @@ const TrashEntry = ({
 
   const dateColorIntensity = getDateColorIntensity(item.createdAt);
 
-  // ✅ CONFIRMATION INTÉGRÉE pour la restauration
+  // ✅ Restauration avec confirmation unifiée
   const handleRestore = async () => {
     if (isProcessing) return;
-
     setMenuVisible(false);
     setIsProcessing(true);
 
@@ -330,7 +354,6 @@ const TrashEntry = ({
           setIsProcessing(false);
           return;
         }
-
         await onRestoreFromTrash(item);
       } else {
         Alert.alert(
@@ -365,10 +388,9 @@ const TrashEntry = ({
     }
   };
 
-  // ✅ CONFIRMATION INTÉGRÉE pour la suppression définitive
+  // ✅ Suppression définitive avec confirmation unifiée
   const handleDeletePermanently = async () => {
     if (isProcessing) return;
-
     setMenuVisible(false);
     setIsProcessing(true);
 
@@ -384,7 +406,6 @@ const TrashEntry = ({
           setIsProcessing(false);
           return;
         }
-
         await onDeletePermanently(item);
       } else {
         Alert.alert(
@@ -423,11 +444,27 @@ const TrashEntry = ({
     }
   };
 
+  // ✅ Menu contextuel Android unifié
   const handleLongPress = () => {
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+      Alert.alert("Actions", `Session du ${formattedDate} (Corbeille)`, [
+        {
+          text: "♻️ Restaurer",
+          onPress: handleRestore,
+        },
+        {
+          text: "💀 Supprimer définitivement",
+          style: "destructive",
+          onPress: handleDeletePermanently,
+        },
+        {
+          text: "Annuler",
+          style: "cancel",
+        },
+      ]);
     }
-    setMenuVisible(true);
   };
 
   return (
@@ -442,12 +479,26 @@ const TrashEntry = ({
             )
               .toString(16)
               .padStart(2, "0")}`,
-            opacity: isProcessing ? 0.6 : 1, // ✅ Indication visuelle pendant traitement
+            opacity: isProcessing ? 0.6 : 1,
+            // ✅ Design unifié Android pour corbeille
+            ...(Platform.OS === "android" && {
+              elevation: 0,
+              borderRadius: 8,
+              marginHorizontal: 4,
+              marginVertical: 2,
+              backgroundColor: "#ef444408", // Léger arrière-plan rouge
+            }),
           },
         ]}
         onPress={() => !isProcessing && onLoadEntry(item)}
-        onLongPress={Platform.OS !== "web" ? handleLongPress : undefined}
+        onLongPress={handleLongPress}
         disabled={isProcessing}
+        {...(Platform.OS === "android" && {
+          android_ripple : {
+            color: "#ef444430",
+            borderless: false,
+          },
+        })}
       >
         <View
           style={{
@@ -527,7 +578,7 @@ const TrashEntry = ({
         </View>
       </TouchableOpacity>
 
-      {/* Menu avec confirmations intégrées */}
+      {/* ✅ Menu Web uniquement */}
       {Platform.OS === "web" && (
         <Menu
           visible={menuVisible}
@@ -582,7 +633,7 @@ const TrashEntry = ({
   );
 };
 
-// ✅ Composant principal avec confirmation intégrée pour vider la corbeille
+// ✅ Composant principal avec design unifié
 const SimplifiedSidebar = ({
   currentTheme,
   currentEntry,
@@ -602,7 +653,6 @@ const SimplifiedSidebar = ({
   const [activeTab, setActiveTab] = useState<SidebarTab>("sessions");
   const [isEmptyingTrash, setIsEmptyingTrash] = useState(false);
 
-  // Options de recherche simplifiées
   const searchOptions = useMemo(
     () => ({
       searchInContent: true,
@@ -619,7 +669,6 @@ const SimplifiedSidebar = ({
   const sessionsSearch = useSearch(entries, searchOptions);
   const trashSearch = useSearch(trashEntries, searchOptions);
 
-  // Données à afficher selon l'onglet actif
   const displayData = useMemo(() => {
     if (activeTab === "sessions") {
       const search = sessionsSearch;
@@ -654,10 +703,9 @@ const SimplifiedSidebar = ({
     }
   }, [activeTab, sessionsSearch, trashSearch, entries, trashEntries]);
 
-  // ✅ CONFIRMATION INTÉGRÉE pour vider la corbeille
+  // ✅ Vidage corbeille avec confirmation unifiée
   const handleEmptyTrash = async () => {
     if (trashEntries.length === 0 || isEmptyingTrash) return;
-
     setIsEmptyingTrash(true);
 
     try {
@@ -675,7 +723,6 @@ const SimplifiedSidebar = ({
           setIsEmptyingTrash(false);
           return;
         }
-
         await onEmptyTrash();
       } else {
         Alert.alert(
@@ -720,7 +767,6 @@ const SimplifiedSidebar = ({
     }
   };
 
-  // Render functions
   const renderSessionEntry = ({ item }: { item: any }) => (
     <SessionEntry
       item={item}
@@ -754,14 +800,26 @@ const SimplifiedSidebar = ({
         {
           backgroundColor: currentTheme.surface,
           borderLeftColor: currentTheme.border,
+          // ✅ Design unifié Android
+          ...(Platform.OS === "android" && {
+            elevation: 8,
+            shadowColor: "#000",
+          }),
         },
       ]}
     >
-      {/* Header */}
+      {/* ✅ Header unifié */}
       <View
         style={[
           sidebarStyles.sidebarHeader,
-          { borderBottomColor: currentTheme.border },
+          {
+            borderBottomColor: currentTheme.border,
+            // ✅ Padding unifié Android
+            ...(Platform.OS === "android" && {
+              paddingTop: 8,
+              elevation: 2,
+            }),
+          },
         ]}
       >
         <View style={{ flexDirection: "row", flex: 1, alignItems: "center" }}>
@@ -776,6 +834,12 @@ const SimplifiedSidebar = ({
                   ? currentTheme.accent + "20"
                   : "transparent",
             }}
+            {...(Platform.OS === "android" && {
+              android_ripple: {
+                color: currentTheme.accent + "30",
+                borderless: false,
+              },
+            })}
           >
             <Text
               style={{
@@ -803,6 +867,12 @@ const SimplifiedSidebar = ({
                   : "transparent",
               marginLeft: 8,
             }}
+            {...(Platform.OS === "android" && {
+              android_ripple: {
+                color: currentTheme.accent + "30",
+                borderless: false,
+              },
+            })}
           >
             <Text
               style={{
@@ -819,7 +889,15 @@ const SimplifiedSidebar = ({
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity onPress={onClose}>
+        <TouchableOpacity
+          onPress={onClose}
+          {...(Platform.OS === "android" && {
+            android_ripple: {
+              color: currentTheme.accent + "30",
+              borderless: false,
+            },
+          })}
+        >
           <Text
             style={[sidebarStyles.sidebarClose, { color: currentTheme.muted }]}
           >
@@ -828,7 +906,7 @@ const SimplifiedSidebar = ({
         </TouchableOpacity>
       </View>
 
-      {/* Barre de recherche */}
+      {/* ✅ Barre de recherche unifiée */}
       <SearchBar
         currentTheme={currentTheme}
         searchQuery={displayData.search.searchQuery}
@@ -844,7 +922,7 @@ const SimplifiedSidebar = ({
         }
       />
 
-      {/* Contenu selon l'onglet actif */}
+      {/* ✅ Contenu unifié */}
       {activeTab === "sessions" ? (
         <FlatList
           data={displayData.data}
@@ -882,17 +960,32 @@ const SimplifiedSidebar = ({
                 style={{
                   backgroundColor: isEmptyingTrash ? "#ef444460" : "#ef4444",
                   paddingHorizontal: 16,
-                  paddingVertical: 8,
+                  paddingVertical: 12,
                   borderRadius: 8,
                   alignItems: "center",
+                  // ✅ Design unifié Android
+                  ...(Platform.OS === "android" && {
+                    elevation: isEmptyingTrash ? 0 : 2,
+                  }),
                 }}
+                {...(Platform.OS === "android" && {
+                  android_ripple: {
+                    color: "#ffffff30",
+                    borderless: false,
+                  },
+                })}
               >
                 <Text
-                  style={{ color: "white", fontSize: 14, fontWeight: "500" }}
+                  style={{
+                    color: "white",
+                    fontSize: 14,
+                    fontWeight: "600",
+                    opacity: isEmptyingTrash ? 0.7 : 1,
+                  }}
                 >
                   {isEmptyingTrash
                     ? "vidage en cours..."
-                    : "vider la corbeille"}
+                    : "🗑️ vider la corbeille"}
                 </Text>
               </TouchableOpacity>
             </View>

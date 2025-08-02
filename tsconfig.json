@@ -11,5 +11,5 @@
   "include": [
     "**/*.ts",
     "**/*.tsx"
-, "styles/sidebar.styles.ts", "hooks/useConfirmation.ts.backup"  ]
+, "styles/sidebar.styles.ts", "hooks/useConfirmation.ts"  ]
 }
