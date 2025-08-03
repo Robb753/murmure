@@ -15,163 +15,13 @@ interface SimpleSidebarProps {
   onDeletePermanently: (entry: MurmureEntry) => void;
   onEmptyTrash: () => void;
   onExportEntry: (entry: MurmureEntry) => void;
+  // Props optionnelles pour compatibilité avec l'ancien code
+  onShareEntry?: (entry: MurmureEntry) => void;
+  getDaysUntilDeletion?: (entry: MurmureEntry) => number | null;
+  onDataChanged?: () => void;
 }
 
-// ✅ NOUVEAU: Modal de confirmation intégré dans la sidebar
-const InlineConfirmationModal = ({
-  visible,
-  title,
-  message,
-  confirmText,
-  confirmColor,
-  currentTheme,
-  onConfirm,
-  onCancel,
-}: {
-  visible: boolean;
-  title: string;
-  message: string;
-  confirmText: string;
-  confirmColor?: string;
-  currentTheme: any;
-  onConfirm: () => void;
-  onCancel: () => void;
-}) => {
-  if (!visible) return null;
-
-  const buttonColor = confirmColor || "#ef4444";
-
-  return (
-    <View
-      style={{
-        position: "absolute",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: "rgba(0,0,0,0.6)",
-        justifyContent: "center",
-        alignItems: "center",
-        zIndex: 1000,
-        paddingHorizontal: 30,
-        paddingVertical: 20,
-      }}
-    >
-      {/* Zone cliquable pour fermer */}
-      <TouchableOpacity
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-        }}
-        onPress={onCancel}
-        activeOpacity={1}
-      />
-
-      {/* Modal */}
-      <View
-        style={{
-          backgroundColor: currentTheme.surface,
-          borderRadius: 20,
-          padding: 24,
-          maxWidth: 280,
-          width: "85%",
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 8 },
-          shadowOpacity: 0.25,
-          shadowRadius: 20,
-          elevation: 15,
-          borderWidth: 1,
-          borderColor: currentTheme.border,
-          zIndex: 1001,
-        }}
-      >
-        {/* Titre */}
-        <Text
-          style={{
-            color: currentTheme.text,
-            fontSize: 18,
-            fontWeight: "600",
-            marginBottom: 12,
-            textAlign: "center",
-          }}
-        >
-          {title}
-        </Text>
-
-        {/* Message */}
-        <Text
-          style={{
-            color: currentTheme.textSecondary,
-            fontSize: 14,
-            lineHeight: 20,
-            marginBottom: 24,
-            textAlign: "center",
-          }}
-        >
-          {message}
-        </Text>
-
-        {/* Boutons */}
-        <View style={{ flexDirection: "row", gap: 12 }}>
-          {/* Bouton Annuler */}
-          <TouchableOpacity
-            onPress={onCancel}
-            style={{
-              flex: 1,
-              paddingVertical: 12,
-              paddingHorizontal: 16,
-              borderRadius: 12,
-              backgroundColor: currentTheme.muted + "20",
-              borderWidth: 1,
-              borderColor: currentTheme.muted + "40",
-            }}
-            activeOpacity={0.7}
-          >
-            <Text
-              style={{
-                color: currentTheme.muted,
-                fontSize: 14,
-                fontWeight: "500",
-                textAlign: "center",
-              }}
-            >
-              Annuler
-            </Text>
-          </TouchableOpacity>
-
-          {/* Bouton Confirmer */}
-          <TouchableOpacity
-            onPress={onConfirm}
-            style={{
-              flex: 1,
-              paddingVertical: 12,
-              paddingHorizontal: 16,
-              borderRadius: 12,
-              backgroundColor: buttonColor,
-            }}
-            activeOpacity={0.8}
-          >
-            <Text
-              style={{
-                color: "white",
-                fontSize: 14,
-                fontWeight: "600",
-                textAlign: "center",
-              }}
-            >
-              {confirmText}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </View>
-  );
-};
-
-// ✅ ULTRA SIMPLE: Une seule entrée pour tout
+// ✅ Composant SimpleEntry
 const SimpleEntry = ({
   item,
   currentTheme,
@@ -210,30 +60,25 @@ const SimpleEntry = ({
   const isActive = currentEntry?.id === item.id;
   const isEmpty = item.content.trim().length === 0;
 
-  // ✅ SIMPLE: Clic principal = charger l'entrée
   const handlePress = () => {
     console.log("📱 Clic sur entrée:", item.id);
     onLoadEntry(item);
   };
 
-  // ✅ Clic sur les trois points = menu
   const handleMenuPress = () => {
     onMenuOpen();
     setShowMenu(true);
   };
 
-  // ✅ AMÉLIORATION: Long press = menu contextuel
   const handleLongPress = () => {
     onMenuOpen();
     setShowMenu(true);
   };
 
-  // ✅ Fermer le menu
   const closeMenu = () => {
     setShowMenu(false);
   };
 
-  // ✅ Actions du menu
   const handleExport = () => {
     closeMenu();
     console.log("📤 Export demandé pour:", item.id);
@@ -248,7 +93,6 @@ const SimpleEntry = ({
     console.log("🗑️ Suppression demandée pour:", item.id, "isTrash:", isTrash);
 
     if (isTrash) {
-      // Suppression définitive avec confirmation
       onShowConfirmation({
         title: "Suppression définitive ?",
         message: `Supprimer définitivement "${itemName}" ?\n\n⚠️ Cette action est irréversible !`,
@@ -260,7 +104,6 @@ const SimpleEntry = ({
         },
       });
     } else {
-      // Déplacer vers corbeille avec confirmation
       onShowConfirmation({
         title: "Déplacer vers la corbeille ?",
         message: `Déplacer "${itemName}" vers la corbeille ?\n\nSuppression définitive dans 30 jours.`,
@@ -297,7 +140,7 @@ const SimpleEntry = ({
     item.previewText || item.content.substring(0, 30) || "Session vide";
 
   return (
-    <>
+    <View style={{ position: "relative" }}>
       <View
         style={{
           flexDirection: "row",
@@ -318,14 +161,12 @@ const SimpleEntry = ({
           elevation: 2,
         }}
       >
-        {/* ✅ Zone principale cliquable */}
         <TouchableOpacity
           onPress={handlePress}
           onLongPress={handleLongPress}
           style={{ flex: 1 }}
           activeOpacity={0.7}
         >
-          {/* Date */}
           <Text
             style={{
               color: currentTheme.text,
@@ -343,7 +184,6 @@ const SimpleEntry = ({
             {isTrash && " 🗑️"}
           </Text>
 
-          {/* Preview */}
           <Text
             style={{
               color: currentTheme.textSecondary,
@@ -355,7 +195,6 @@ const SimpleEntry = ({
             {isEmpty ? "Session vide" : item.previewText || "Pas de preview"}
           </Text>
 
-          {/* Métadonnées */}
           <View
             style={{
               flexDirection: "row",
@@ -384,7 +223,6 @@ const SimpleEntry = ({
           </View>
         </TouchableOpacity>
 
-        {/* ✅ BOUTON: Trois points */}
         <TouchableOpacity
           onPress={handleMenuPress}
           style={{
@@ -409,7 +247,6 @@ const SimpleEntry = ({
         </TouchableOpacity>
       </View>
 
-      {/* ✅ MODAL MENU */}
       {showMenu && (
         <View
           style={{
@@ -421,10 +258,9 @@ const SimpleEntry = ({
             backgroundColor: "rgba(0,0,0,0.3)",
             justifyContent: "center",
             alignItems: "center",
-            zIndex: 500,
+            zIndex: 50,
           }}
         >
-          {/* Zone cliquable pour fermer */}
           <TouchableOpacity
             style={{
               position: "absolute",
@@ -437,7 +273,6 @@ const SimpleEntry = ({
             activeOpacity={1}
           />
 
-          {/* Menu modal */}
           <View
             style={{
               backgroundColor: currentTheme.surface,
@@ -465,7 +300,6 @@ const SimpleEntry = ({
               {itemName}
             </Text>
 
-            {/* Boutons du menu */}
             {isTrash ? (
               <>
                 <TouchableOpacity
@@ -556,7 +390,6 @@ const SimpleEntry = ({
               </>
             )}
 
-            {/* Bouton Annuler */}
             <TouchableOpacity
               onPress={closeMenu}
               style={{
@@ -579,11 +412,11 @@ const SimpleEntry = ({
           </View>
         </View>
       )}
-    </>
+    </View>
   );
 };
 
-// ✅ COMPOSANT PRINCIPAL
+// ✅ Composant principal SimpleSidebar
 const SimpleSidebar = ({
   currentTheme,
   currentEntry,
@@ -596,6 +429,9 @@ const SimpleSidebar = ({
   onDeletePermanently,
   onEmptyTrash,
   onExportEntry,
+  onShareEntry,
+  getDaysUntilDeletion,
+  onDataChanged,
 }: SimpleSidebarProps) => {
   const [activeTab, setActiveTab] = useState<"sessions" | "trash">("sessions");
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
@@ -617,7 +453,6 @@ const SimpleSidebar = ({
   const insets = useSafeAreaInsets();
   const currentData = activeTab === "sessions" ? entries : trashEntries;
 
-  // ✅ Fonction pour afficher une confirmation
   const showConfirmation = (config: {
     title: string;
     message: string;
@@ -625,30 +460,26 @@ const SimpleSidebar = ({
     confirmColor?: string;
     onConfirm: () => void;
   }) => {
-    setOpenMenuId(null); // Fermer tous les menus
+    setOpenMenuId(null);
     setConfirmationState({
       visible: true,
       ...config,
     });
   };
 
-  // ✅ Fonction pour fermer la confirmation
   const hideConfirmation = () => {
     setConfirmationState((prev) => ({ ...prev, visible: false }));
   };
 
-  // ✅ Fonction pour confirmer et fermer
   const handleConfirm = () => {
     confirmationState.onConfirm();
     hideConfirmation();
   };
 
-  // ✅ Fonction pour gérer l'ouverture d'un menu
   const handleMenuOpen = (itemId: string) => {
     setOpenMenuId(itemId);
   };
 
-  // ✅ Fonction pour vider la corbeille
   const handleEmptyTrash = () => {
     const count = trashEntries.length;
     showConfirmation({
@@ -667,7 +498,6 @@ const SimpleSidebar = ({
     });
   };
 
-  // ✅ Gérer les clics dans la sidebar
   const handleSidebarPress = () => {
     if (confirmationState.visible) {
       hideConfirmation();
@@ -693,13 +523,11 @@ const SimpleSidebar = ({
         elevation: 16,
       }}
     >
-      {/* Zone cliquable pour fermer les modals */}
       <TouchableOpacity
         style={{ flex: 1 }}
         activeOpacity={1}
         onPress={handleSidebarPress}
       >
-        {/* HEADER */}
         <View
           style={{
             flexDirection: "row",
@@ -710,7 +538,6 @@ const SimpleSidebar = ({
             borderBottomColor: currentTheme.border,
           }}
         >
-          {/* Tabs */}
           <View style={{ flexDirection: "row", gap: 8 }}>
             <TouchableOpacity
               onPress={() => setActiveTab("sessions")}
@@ -765,13 +592,11 @@ const SimpleSidebar = ({
             </TouchableOpacity>
           </View>
 
-          {/* Bouton fermer */}
           <TouchableOpacity onPress={onClose} style={{ padding: 4 }}>
             <Text style={{ color: currentTheme.muted, fontSize: 20 }}>×</Text>
           </TouchableOpacity>
         </View>
 
-        {/* BOUTON VIDER CORBEILLE */}
         {activeTab === "trash" && trashEntries.length > 0 && (
           <View
             style={{
@@ -797,7 +622,6 @@ const SimpleSidebar = ({
           </View>
         )}
 
-        {/* LISTE */}
         <FlatList
           data={currentData}
           keyExtractor={(item) => item.id}
@@ -829,17 +653,127 @@ const SimpleSidebar = ({
         />
       </TouchableOpacity>
 
-      {/* ✅ MODAL DE CONFIRMATION INTÉGRÉ */}
-      <InlineConfirmationModal
-        visible={confirmationState.visible}
-        title={confirmationState.title}
-        message={confirmationState.message}
-        confirmText={confirmationState.confirmText}
-        confirmColor={confirmationState.confirmColor}
-        currentTheme={currentTheme}
-        onConfirm={handleConfirm}
-        onCancel={hideConfirmation}
-      />
+      {confirmationState.visible && (
+        <View
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0,0,0,0.7)",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 9999,
+            paddingHorizontal: 30,
+            paddingVertical: 20,
+          }}
+        >
+          <TouchableOpacity
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+            }}
+            onPress={hideConfirmation}
+            activeOpacity={1}
+          />
+
+          <View
+            style={{
+              backgroundColor: currentTheme.surface,
+              borderRadius: 20,
+              padding: 24,
+              maxWidth: 280,
+              width: "85%",
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 8 },
+              shadowOpacity: 0.25,
+              shadowRadius: 20,
+              elevation: 50,
+              borderWidth: 1,
+              borderColor: currentTheme.border,
+              zIndex: 10000,
+            }}
+          >
+            <Text
+              style={{
+                color: currentTheme.text,
+                fontSize: 18,
+                fontWeight: "600",
+                marginBottom: 12,
+                textAlign: "center",
+              }}
+            >
+              {confirmationState.title}
+            </Text>
+
+            <Text
+              style={{
+                color: currentTheme.textSecondary,
+                fontSize: 14,
+                lineHeight: 20,
+                marginBottom: 24,
+                textAlign: "center",
+              }}
+            >
+              {confirmationState.message}
+            </Text>
+
+            <View style={{ flexDirection: "row", gap: 12 }}>
+              <TouchableOpacity
+                onPress={hideConfirmation}
+                style={{
+                  flex: 1,
+                  paddingVertical: 12,
+                  paddingHorizontal: 16,
+                  borderRadius: 12,
+                  backgroundColor: currentTheme.muted + "20",
+                  borderWidth: 1,
+                  borderColor: currentTheme.muted + "40",
+                }}
+                activeOpacity={0.7}
+              >
+                <Text
+                  style={{
+                    color: currentTheme.muted,
+                    fontSize: 14,
+                    fontWeight: "500",
+                    textAlign: "center",
+                  }}
+                >
+                  Annuler
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={handleConfirm}
+                style={{
+                  flex: 1,
+                  paddingVertical: 12,
+                  paddingHorizontal: 16,
+                  borderRadius: 12,
+                  backgroundColor: confirmationState.confirmColor || "#ef4444",
+                }}
+                activeOpacity={0.8}
+              >
+                <Text
+                  style={{
+                    color: "white",
+                    fontSize: 14,
+                    fontWeight: "600",
+                    textAlign: "center",
+                  }}
+                >
+                  {confirmationState.confirmText}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
     </View>
   );
 };

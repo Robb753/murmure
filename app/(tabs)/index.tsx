@@ -41,13 +41,13 @@ import {
   modalStyles,
 } from "@/styles";
 import ThemeSelector from "@/components/ThemeSelector";
-import { EnhancedSidebar } from "@/components/EnhancedSidebar";
 import { useWebAlert } from "@/components/ExportModal";
 
 // Types
 import { MurmureEntry } from "@/app/lib/storage";
 import { createResponsiveMainStyles } from "@/styles/mainPage.styles";
 import { isMobile, isWeb } from "@/utils/platform";
+import { EnhancedSidebar } from "@/components/EnhancedSidebar";
 
 // Constantes
 const fontSizes = [16, 20, 24, 28, 32, 36, 40];
@@ -175,7 +175,6 @@ export default function TabOneScreen() {
     restoreFromTrash,
     deleteEntryPermanently,
     emptyTrash,
-    getDaysUntilDeletion,
   } = useStorage();
 
   const {
@@ -532,49 +531,6 @@ const createWebHoverHandlers = (
     },
     [showAlert]
   ); 
-
-  const shareEntry = useCallback(
-    async (entry: MurmureEntry): Promise<boolean> => {
-      try {
-        const content = entry.content;
-        const wordCount = content
-          .trim()
-          .split(/\s+/)
-          .filter((word) => word.length > 0).length;
-
-        if (Platform.OS === "web") {
-          // Web : copie dans le presse-papier
-          await navigator.clipboard.writeText(
-            `${content}\n\n— Écrit avec Murmure 🌙`
-          );
-          Alert.alert(
-            "Copié ✨",
-            `${wordCount} mots copiés dans le presse-papier`
-          );
-          return true;
-        } else {
-          // Mobile : partage intelligent
-          if (await Sharing.isAvailableAsync()) {
-            await Sharing.shareAsync(`${content}\n\n— Écrit avec Murmure 🌙`);
-            return true;
-          } else {
-            // Fallback : copie dans le presse-papier
-            await Clipboard.setStringAsync(content);
-            Alert.alert(
-              "Texte copié",
-              `${wordCount} mots copiés dans le presse-papier`
-            );
-            return true;
-          }
-        }
-      } catch (error) {
-        console.error("Erreur partage:", error);
-        Alert.alert("Erreur", "Impossible de partager le contenu");
-        return false;
-      }
-    },
-    []
-  );
 
   const cleanupOldFiles = useCallback(async () => {
     // Ne faire le nettoyage que sur mobile
@@ -1845,20 +1801,17 @@ return (
           }}
         >
           <EnhancedSidebar
-            currentTheme={currentTheme}
-            currentEntry={currentEntry}
-            entries={entries}
-            trashEntries={trashEntries}
-            onClose={closeSidebar}
-            onLoadEntry={loadEntry}
-            onShareEntry={shareEntry}
-            onMoveToTrash={moveEntryToTrash}
-            onRestoreFromTrash={restoreFromTrash}
-            onDeletePermanently={deleteEntryPermanently}
-            onEmptyTrash={emptyTrash}
-            getDaysUntilDeletion={getDaysUntilDeletion}
-            onDataChanged={loadData}
-            onExportEntry={exportEntry}
+          currentTheme={currentTheme}
+          currentEntry={currentEntry}
+          entries={entries}
+          trashEntries={trashEntries}
+          onClose={closeSidebar}
+          onLoadEntry={loadEntry}
+          onMoveToTrash={moveEntryToTrash}
+          onRestoreFromTrash={restoreFromTrash}
+          onDeletePermanently={deleteEntryPermanently}
+          onEmptyTrash={emptyTrash}
+          onExportEntry={exportEntry}
           />
         </Animated.View>
       )}
