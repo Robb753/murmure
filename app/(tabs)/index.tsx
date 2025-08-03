@@ -863,12 +863,11 @@ const createWebHoverHandlers = (
     if (Platform.OS !== "android") return;
 
     const backAction = () => {
-      if (focusMode) {
-        console.log("🔙 Bouton retour Android - affichage des contrôles");
-        showFocusControlsTemporarily(); // ✅ CHANGEMENT: Afficher les contrôles au lieu de handleStopTimer()
-        return true; // Empêcher la fermeture de l'app
+      if (focusModeRef.current) {
+        showFocusControlsTemporarilyRef.current?.();
+        return true;
       }
-      return false; // Laisser le comportement par défaut
+      return false;
     };
 
     const backHandler = BackHandler.addEventListener(
@@ -877,7 +876,7 @@ const createWebHoverHandlers = (
     );
 
     return () => backHandler.remove();
-  }, [focusMode, showFocusControlsTemporarily]);
+  }, []);
 
   // Sauvegarde avant fermeture
   useEffect(() => {
