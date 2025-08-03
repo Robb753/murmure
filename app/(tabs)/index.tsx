@@ -330,19 +330,17 @@ const createWebHoverHandlers = (
                 ]);
                 return;
               } catch (error) {
-                // ✅ CORRECTION: Vérifier si c'est une annulation utilisateur
                 if (error instanceof Error && error.name === "AbortError") {
                   console.log(
                     "👤 [Export Web] Téléchargement annulé par l'utilisateur"
                   );
-                  return; // Sortir sans faire de fallback ni afficher d'erreur
+                  return;
                 }
 
                 console.log(
                   "📁 [Export Web] File System Access échoué, fallback vers méthode classique...",
                   error
                 );
-                // Continue avec la méthode classique seulement en cas d'erreur technique
               }
             }
 
@@ -355,10 +353,7 @@ const createWebHoverHandlers = (
             a.style.display = "none";
 
             document.body.appendChild(a);
-
-            // ✅ CORRECTION: Forcer le reflow pour s'assurer que l'élément est dans le DOM
             void a.offsetHeight;
-
             a.click();
 
             console.log(
@@ -401,7 +396,6 @@ const createWebHoverHandlers = (
               await navigator.clipboard.writeText(content);
             } else {
               await Clipboard.setStringAsync(content);
-              // ✅ Utiliser isMobile() au lieu de comparaisons manuelles
               if (isMobile()) {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               }
@@ -465,7 +459,6 @@ const createWebHoverHandlers = (
             const fileUri = `${documentsDir}${filename}.txt`;
             await FileSystem.writeAsStringAsync(fileUri, content);
 
-            // ✅ Utiliser isMobile() au lieu de comparaisons manuelles
             if (isMobile()) {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             }
@@ -483,40 +476,59 @@ const createWebHoverHandlers = (
           }
         };
 
-        // ✅ Menu unifié avec options adaptées à la plateforme
-        const menuOptions = [
+        // ✅ Créer les options avec typage correct
+        const menuOptions: {
+          text: string;
+          icon: string;
+          description: string;
+          onPress: () => void;
+          style: "default" | "cancel" | "destructive";
+        }[] = [
           {
-            text: "📋 Copier le texte",
+            text: "Copier le texte",
+            icon: "📋",
+            description: "Copier dans le presse-papier",
             onPress: copyToClipboard,
-            style: "default" as const,
-          },
-          ...(isWeb()
-            ? [
-                {
-                  text: "💾 Télécharger (.txt)",
-                  onPress: downloadFile,
-                  style: "default" as const,
-                },
-              ]
-            : [
-                {
-                  text: "📱 Partager",
-                  onPress: shareContent,
-                  style: "default" as const,
-                },
-                {
-                  text: "📁 Sauvegarder un fichier",
-                  onPress: saveFile,
-                  style: "default" as const,
-                },
-              ]),
-          {
-            text: "Annuler",
-            onPress: () => {},
-            style: "cancel" as const,
+            style: "default",
           },
         ];
 
+        // Ajouter options spécifiques à la plateforme
+        if (isWeb()) {
+          menuOptions.push({
+            text: "Télécharger (.txt)",
+            icon: "💾",
+            description: "Sauvegarder sur votre ordinateur",
+            onPress: downloadFile,
+            style: "default",
+          });
+        } else {
+          menuOptions.push({
+            text: "Partager",
+            icon: "📱",
+            description: "Partager via vos applications",
+            onPress: shareContent,
+            style: "default",
+          });
+
+          menuOptions.push({
+            text: "Sauvegarder un fichier",
+            icon: "📁",
+            description: "Créer un fichier dans Documents",
+            onPress: saveFile,
+            style: "default",
+          });
+        }
+
+        menuOptions.push({
+          text: "Annuler",
+          icon: "",
+          description: "",
+          onPress: () => {},
+          style: "cancel",
+        });
+
+        // ✅ Afficher la modal améliorée
         showAlert(
           "Exporter votre texte",
           `${wordCount} mots • ${dateText}`,

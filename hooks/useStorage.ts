@@ -503,7 +503,7 @@ export const useStorage = () => {
       saveTimeoutRef.current = setTimeout(() => {
         console.log("💾 Sauvegarde automatique déclenchée");
         saveCurrentEntry().catch(console.warn);
-      }, 800);
+      }, 2000);
     }
 
     return () => {
