@@ -1,7 +1,7 @@
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 
-export default function RootLayout() {
+export default function AppLayout() {
   return (
     <>
       <StatusBar style="dark" backgroundColor="#f5f5f0" />
@@ -19,6 +19,7 @@ export default function RootLayout() {
             title: "Murmure",
           }}
         />
+        {/* Ajoutez d'autres screens de votre app si nécessaire */}
       </Stack>
     </>
   );
