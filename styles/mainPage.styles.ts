@@ -1,5 +1,9 @@
 import { DimensionValue, Platform, StyleSheet } from "react-native";
 
+// ==========================================
+// STYLES EXISTANTS DE L'APPLICATION
+// ==========================================
+
 export const mainPageStyles = StyleSheet.create({
   logoImage: {
     resizeMode: "contain" as const,
@@ -29,7 +33,6 @@ export const mainPageStyles = StyleSheet.create({
     fontWeight: "500" as const,
   },
 
-  // Zone d'écriture
   writingContainer: {
     flex: 1,
     paddingHorizontal: 20,
@@ -54,7 +57,6 @@ export const mainPageStyles = StyleSheet.create({
     textAlign: "center" as const,
   },
 
-  // Footer
   footer: {
     flexDirection: "row" as const,
     justifyContent: "space-between" as const,
@@ -113,292 +115,590 @@ export const mainPageStyles = StyleSheet.create({
   },
 });
 
-// Fonction pour créer des styles responsives dynamiques
-export const createResponsiveMainStyles = (design: any) => {
-  return {
-    // Styles qui s'adaptent à la taille d'écran
-    responsiveTextInput: {
-      fontSize: design.isSmallScreen ? 16 : 18,
-      padding: design.spacing.medium,
-      lineHeight: (design.isSmallScreen ? 16 : 18) * 1.5,
-    },
-
-    responsiveNormalTextInput: {
-      paddingHorizontal: design.isSmallScreen ? 12 : 15,
-      paddingVertical: design.isSmallScreen ? 12 : 15,
-    },
-
-    responsiveWritingContainer: {
-      flex: 1,
-      paddingHorizontal: design.containerPadding,
-      paddingVertical: design.spacing.large,
-      justifyContent: "center" as const,
-      alignItems: "center" as const,
-      // Réserver de l'espace pour le footer
-      paddingBottom: design.spacing.large + 20,
-    },
-
-    responsiveHeader: {
-      paddingHorizontal: design.containerPadding,
-      paddingVertical:
-        Platform.OS === "web"
-          ? design.isSmallScreen
-            ? 6
-            : 7 // ✅ RÉDUIT: était 8/10
-          : design.isSmallScreen
-          ? 8
-          : 9, // ✅ RÉDUIT: était plus grand
-      minHeight:
-        Platform.OS === "web"
-          ? design.isSmallScreen
-            ? 38
-            : 42 // ✅ RÉDUIT: était 45/50
-          : design.isSmallScreen
-          ? 44
-          : 48, // ✅ RÉDUIT: était 55/60
-    },
-
-    responsiveTimerContainer: {
-      paddingHorizontal: design.containerPadding,
-      paddingVertical:
-        Platform.OS === "web"
-          ? design.isSmallScreen
-            ? 4
-            : 6 // ✅ RÉDUIT: était 6/8
-          : design.isSmallScreen
-          ? 6
-          : 8,
-      borderBottomWidth: 1,
-      alignItems: "center" as const,
-      justifyContent: "center" as const,
-    },
-
-    responsiveHeaderButton: {
-      paddingHorizontal:
-        Platform.OS === "web"
-          ? design.isSmallScreen
-            ? 10
-            : 12 // ✅ RÉDUIT: était 12/14
-          : design.isSmallScreen
-          ? 12
-          : 14, // ✅ RÉDUIT: était 16
-      paddingVertical:
-        Platform.OS === "web"
-          ? design.isSmallScreen
-            ? 4
-            : 5 // ✅ RÉDUIT: était 6/8
-          : design.isSmallScreen
-          ? 5
-          : 6, // ✅ RÉDUIT: était 8
-      borderRadius: design.isSmallScreen ? 6 : 8, // ✅ RÉDUIT: était 8/12
-    },
-
-    responsiveTimerSection: {
-      flexDirection: "column" as const,
-      alignItems: "center" as const,
-      gap: design.isSmallScreen ? 8 : 10, // ✅ RÉDUIT: était 10/12
-    },
-
-    responsiveTimerButton: {
-      paddingHorizontal:
-        Platform.OS === "web"
-          ? design.isSmallScreen
-            ? 12
-            : 14 // ✅ RÉDUIT: était 14/16
-          : design.isSmallScreen
-          ? 14
-          : 16, // ✅ RÉDUIT: était 18/20
-      paddingVertical:
-        Platform.OS === "web"
-          ? design.isSmallScreen
-            ? 6
-            : 7 // ✅ RÉDUIT: était 7/8
-          : design.isSmallScreen
-          ? 7
-          : 8, // ✅ RÉDUIT: était 8/10
-      borderRadius: design.isSmallScreen ? 8 : 10, // ✅ RÉDUIT: était 10/12
-      minWidth:
-        Platform.OS === "web"
-          ? design.isSmallScreen
-            ? 110
-            : 120 // ✅ RÉDUIT: était 120/140
-          : design.isSmallScreen
-          ? 120
-          : 140, // ✅ RÉDUIT: était 140/160
-      borderWidth: 1,
-    },
-
-    responsiveDurationButtons: {
-      flexDirection: "row" as const,
-      gap:
-        Platform.OS === "web"
-          ? design.isSmallScreen
-            ? 4
-            : 6 // ✅ RÉDUIT: était 6/8
-          : design.isSmallScreen
-          ? 6
-          : 8, // ✅ RÉDUIT: était 8/12
-      justifyContent: "center" as const,
-    },
-
-    responsiveDurationButton: {
-      paddingHorizontal:
-        Platform.OS === "web"
-          ? design.isSmallScreen
-            ? 8
-            : 10 // ✅ RÉDUIT: était 10/12
-          : design.isSmallScreen
-          ? 10
-          : 12, // ✅ RÉDUIT: était 14/16
-      paddingVertical:
-        Platform.OS === "web"
-          ? design.isSmallScreen
-            ? 4
-            : 5 // ✅ RÉDUIT: était 5/6
-          : design.isSmallScreen
-          ? 5
-          : 6, // ✅ RÉDUIT: était 6/8
-      borderRadius: design.isSmallScreen ? 6 : 7, // ✅ RÉDUIT: était 6/8
-      minWidth:
-        Platform.OS === "web"
-          ? design.isSmallScreen
-            ? 40
-            : 45 // ✅ RÉDUIT: était 45/50
-          : design.isSmallScreen
-          ? 50
-          : 55, // ✅ RÉDUIT: était 55/60
-      borderWidth: 1,
-    },
-
-    responsiveFooter: {
-      paddingHorizontal: design.containerPadding,
-      paddingVertical:
-        Platform.OS === "web"
-          ? design.isSmallScreen
-            ? 4
-            : 5 // ✅ RÉDUIT: était plus grand
-          : design.isSmallScreen
-          ? 6
-          : 7, // ✅ RÉDUIT: était plus grand
-      minHeight:
-        Platform.OS === "web"
-          ? design.isSmallScreen
-            ? 32
-            : 36 // ✅ RÉDUIT: nouveau
-          : design.isSmallScreen
-          ? 38
-          : 42, // ✅ RÉDUIT: nouveau
-    },
-
-    responsivePaperSheet: {
-      width: "100%" as DimensionValue, // ✅ CORRECTION: Type explicite
-      maxWidth: 1150,
-      flex: 1,
-      padding: design.spacing.large,
-      justifyContent: "center" as const,
-      alignItems: "center" as const,
-      borderRadius: design.isSmallScreen ? 12 : 16,
-      // ✅ CORRECTION: Utiliser une valeur numérique ou undefined
-      ...(design.height && { maxHeight: design.height * 0.85 }),
-    },
-
-    responsiveFooterButton: {
-      paddingHorizontal: design.isSmallScreen ? 5 : 6,
-      paddingVertical: design.isSmallScreen ? 2 : 3,
-      borderRadius: design.isSmallScreen ? 5 : 6,
-      minWidth: design.isSmallScreen ? 26 : 28,
-    },
-  };
-};
-
-// Styles communs
-export const commonStyles = StyleSheet.create({
+export const landingStyles = StyleSheet.create({
+  // Container principal
   container: {
     flex: 1,
   },
 
-  layout: {
-    flex: 1,
-  },
-});
-
-export const timerStyles = StyleSheet.create({
-  timerSection: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-    gap: 12,
+  // Header styles
+  header: {
+    borderBottomWidth: 1,
+    paddingTop: Platform.OS === "web" ? 0 : 50,
   },
 
-  durationButtons: {
-    flexDirection: "row" as const,
-    gap: 4,
+  headerContent: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    maxWidth: 1200,
+    alignSelf: "center",
+    width: "100%",
   },
 
-  durationButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
+  logo: {
+    flexDirection: "row",
+    alignItems: "center",
   },
 
-  durationButtonText: {
-    fontSize: 14,
-    fontWeight: "500" as const,
+  logoIcon: {
+    fontSize: 32,
+    marginRight: 8,
   },
 
-  timerButton: {
+  logoText: {
+    fontSize: 24,
+    fontWeight: "700",
+    fontFamily: Platform.select({
+      ios: "Palatino",
+      android: "serif",
+      web: "'Crimson Text', 'Palatino Linotype', serif",
+    }),
+  },
+
+  // Navigation
+  nav: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
+  },
+
+  navItem: {
+    paddingVertical: 8,
+    marginRight: 32,
+  },
+
+  navText: {
+    fontSize: 16,
+    fontWeight: "500",
+  },
+
+  primaryButton: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 12,
-  },
-
-  timerContent: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-    gap: 8,
-  },
-
-  timerIcon: {
-    fontSize: 16,
-  },
-
-  timerText: {
-    fontSize: 16,
-    fontWeight: "500" as const,
-  },
-});
-
-export const modalStyles = StyleSheet.create({
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "center" as const,
-    alignItems: "center" as const,
-  },
-
-  modalContent: {
-    borderRadius: 16,
-    padding: 24,
-    minWidth: 250,
-    maxWidth: 320,
-    borderWidth: 1,
-  },
-
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "600" as const,
-    marginBottom: 16,
-    textAlign: "center" as const,
-  },
-
-  modalItem: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
     borderRadius: 8,
-    marginVertical: 2,
   },
 
-  modalItemText: {
+  primaryButtonText: {
+    color: "white",
+    fontWeight: "600",
+  },
+
+  // Nouveau bouton soft pour le header
+  primaryButtonSoft: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 25,
+    ...(Platform.OS === "web" && ({ transition: "all 0.3s ease" } as any)),
+  },
+
+  primaryButtonSoftText: {
     fontSize: 16,
-    textAlign: "center" as const,
+    fontWeight: "500",
+  },
+
+  // Hero section
+  hero: {
+    paddingHorizontal: 20,
+    paddingVertical: 80,
+    alignItems: "center",
+    maxWidth: 1200 as const,
+    alignSelf: "center",
+    width: "100%",
+    position: "relative",
+    overflow: "hidden",
+  },
+
+  backgroundElement1: {
+    position: "absolute",
+    top: 80,
+    left: 40,
+    width: 128,
+    height: 128,
+    backgroundColor: "rgba(254, 215, 170, 0.3)",
+    borderRadius: 64,
+  },
+
+  backgroundElement2: {
+    position: "absolute",
+    bottom: 80,
+    right: 40,
+    width: 160,
+    height: 160,
+    backgroundColor: "rgba(254, 215, 170, 0.2)",
+    borderRadius: 80,
+  },
+
+  heroContent: {
+    alignItems: "center",
+    position: "relative",
+    zIndex: 1,
+  },
+
+  heroTitleContainer: {
+    marginBottom: 32,
+    alignItems: "center",
+  },
+
+  heroMainTitle: {
+    fontSize: Platform.OS === "web" ? 48 : 32,
+    fontWeight: "400",
+    textAlign: "center",
+    marginBottom: 16,
+    fontFamily: Platform.select({
+      ios: "Palatino",
+      android: "serif",
+      web: "'Crimson Text', 'Palatino Linotype', 'Book Antiqua', Palatino, serif",
+    }),
+  },
+
+  heroSubTitle: {
+    fontSize: Platform.OS === "web" ? 40 : 28,
+    fontWeight: "300",
+    textAlign: "center",
+    marginBottom: 24,
+    fontFamily: Platform.select({
+      ios: "Palatino",
+      android: "serif",
+      web: "'Crimson Text', 'Palatino Linotype', 'Book Antiqua', Palatino, serif",
+    }),
+  },
+
+  heroDescription: {
+    fontSize: Platform.OS === "web" ? 20 : 18,
+    textAlign: "center",
+    marginBottom: 64,
+    maxWidth: 600,
+    lineHeight: 28,
+    fontWeight: "300",
+    fontFamily: Platform.select({
+      ios: "Georgia",
+      android: "serif",
+      web: "'Crimson Text', Georgia, 'Times New Roman', serif",
+    }),
+  },
+
+  // Phone Mockup
+  phoneMockupContainer: {
+    marginBottom: 64,
+  },
+
+  phoneMockup: {
+    maxWidth: 300,
+    transform: [{ rotate: "3deg" }],
+  },
+
+  phoneGradient: {
+    backgroundColor: "#92400e",
+    borderRadius: 40,
+    padding: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 20 },
+    shadowOpacity: 0.3,
+    shadowRadius: 40,
+    elevation: 20,
+  },
+
+  phoneScreen: {
+    backgroundColor: "#fffbeb",
+    borderRadius: 32,
+    padding: 24,
+    minHeight: 400,
+  },
+
+  phoneHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+
+  phoneAppInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  phoneMoonIcon: {
+    fontSize: 16,
+    marginRight: 8,
+  },
+
+  phoneAppName: {
+    fontSize: 12,
+    color: "#92400e",
+    fontFamily: Platform.select({
+      ios: "Palatino",
+      android: "serif",
+      web: "'Crimson Text', 'Palatino Linotype', serif",
+    }),
+  },
+
+  phoneTime: {
+    fontSize: 12,
+    color: "#b45309",
+  },
+
+  phoneContent: {
+    flex: 1,
+  },
+
+  phoneSessionLabel: {
+    fontSize: 12,
+    color: "#b45309",
+    fontWeight: "500",
+    marginBottom: 12,
+  },
+
+  phoneTextArea: {
+    marginBottom: 16,
+  },
+
+  phoneText: {
+    fontSize: 12,
+    color: "#92400e",
+    lineHeight: 18,
+    marginBottom: 8,
+    fontFamily: Platform.select({
+      ios: "Georgia",
+      android: "serif",
+      web: "'Crimson Text', Georgia, serif",
+    }),
+    fontStyle: "italic",
+  },
+
+  phoneCursor: {
+    width: 64,
+    height: 2,
+    backgroundColor: "#fbbf24",
+    opacity: 0.8,
+  },
+
+  phoneFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: "#fde68a",
+  },
+
+  phoneWordCount: {
+    fontSize: 12,
+    color: "#b45309",
+  },
+
+  phoneDots: {
+    flexDirection: "row",
+  },
+
+  phoneDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    marginLeft: 4,
+  },
+
+  // CTA Buttons
+  ctaContainer: {
+    flexDirection: Platform.OS === "web" ? "row" : "column",
+    alignItems: "center",
+  },
+
+  ctaPrimaryGreen: {
+    backgroundColor: "#16a34a",
+    paddingHorizontal: 32,
+    paddingVertical: 16,
+    borderRadius: 25,
+    minWidth: 280,
+    alignItems: "center",
+    marginBottom: Platform.OS === "web" ? 0 : 16,
+    marginRight: Platform.OS === "web" ? 16 : 0,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 12,
+    elevation: 8,
+    ...(Platform.OS === "web" && ({ transition: "all 0.3s ease" } as any)),
+  },
+
+  ctaPrimaryGreenText: {
+    color: "white",
+    fontSize: 18,
+    fontWeight: "500",
+  },
+
+  ctaSecondaryOutline: {
+    backgroundColor: "rgba(255, 255, 255, 0.8)",
+    borderWidth: 2,
+    borderColor: "#fbbf24",
+    paddingHorizontal: 32,
+    paddingVertical: 16,
+    borderRadius: 25,
+    minWidth: 280,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+    ...(Platform.OS === "web" && ({ transition: "all 0.3s ease" } as any)),
+  },
+
+  ctaSecondaryOutlineText: {
+    color: "#92400e",
+    fontSize: 18,
+    fontWeight: "500",
+  },
+
+  // Trust indicators
+  trustIndicators: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 32,
+  },
+
+  trustItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginHorizontal: 24,
+  },
+
+  trustIcon: {
+    fontSize: 16,
+    marginRight: 8,
+  },
+
+  trustText: {
+    fontSize: 14,
+    color: "#b45309",
+    fontWeight: "400",
+  },
+
+  // Why Section
+  whySection: {
+    paddingHorizontal: 20,
+    paddingVertical: 80,
+    alignItems: "center",
+  },
+
+  whyText: {
+    fontSize: 18,
+    textAlign: "center",
+    lineHeight: 28,
+    maxWidth: 800,
+  },
+
+  // Features Section
+  features: {
+    paddingHorizontal: 20,
+    paddingVertical: 80,
+    alignItems: "center",
+  },
+
+  sectionTitle: {
+    fontSize: 36,
+    fontWeight: "700",
+    textAlign: "center",
+    marginBottom: 64,
+    fontFamily: Platform.select({
+      ios: "Palatino",
+      android: "serif",
+      web: "'Crimson Text', 'Palatino Linotype', serif",
+    }),
+  },
+
+  featureGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    maxWidth: 1300,
+    width: "100%",
+  },
+
+  featureCard: {
+    padding: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    width: Platform.OS === "web" ? 280 : "100%",
+    minHeight: 240,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 20,
+    elevation: 8,
+    margin: 16,
+    ...(Platform.OS === "web" && ({ transition: "all 0.3s ease" } as any)),
+    cursor: Platform.OS === "web" ? "default" : undefined,
+  },
+
+  featureIcon: {
+    fontSize: 48,
+    marginBottom: 16,
+  },
+
+  featureTitle: {
+    fontSize: 20,
+    fontWeight: "600",
+    textAlign: "center",
+    marginBottom: 12,
+  },
+
+  featureDescription: {
+    fontSize: 16,
+    textAlign: "center",
+    lineHeight: 22,
+  },
+
+  // FAQ Section
+  faqSection: {
+    paddingHorizontal: 20,
+    paddingVertical: 80,
+    alignItems: "center",
+  },
+
+  faqContainer: {
+    maxWidth: 800,
+    width: "100%",
+  },
+
+  faqItem: {
+    borderWidth: 1,
+    borderRadius: 12,
+    marginBottom: 16,
+    padding: 24,
+  },
+
+  faqQuestion: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+
+  faqQuestionText: {
+    fontSize: 18,
+    fontWeight: "600",
+    flex: 1,
+    marginRight: 16,
+  },
+
+  faqIcon: {
+    fontSize: 20,
+    fontWeight: "bold",
+  },
+
+  faqAnswer: {
+    fontSize: 16,
+    lineHeight: 24,
+    marginTop: 16,
+  },
+
+  // Footer
+  footer: {
+    backgroundColor: "#0f172a",
+    paddingHorizontal: 20,
+    paddingVertical: 64,
+  },
+
+  footerContent: {
+    maxWidth: 1200,
+    alignSelf: "center",
+    width: "100%",
+  },
+
+  footerGrid: {
+    flexDirection: Platform.OS === "web" ? "row" : "column",
+    justifyContent: "space-between",
+    marginBottom: 48,
+  },
+
+  footerColumn: {
+    flex: 1,
+    marginBottom: Platform.OS === "web" ? 0 : 32,
+    marginRight: Platform.OS === "web" ? 32 : 0,
+  },
+
+  footerLogo: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+
+  footerLogoIcon: {
+    fontSize: 32,
+    marginRight: 8,
+  },
+
+  footerLogoText: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "white",
+  },
+
+  footerDescription: {
+    color: "#94a3b8",
+    fontSize: 16,
+    lineHeight: 24,
+  },
+
+  // Nouveau slogan dans le footer
+  footerSlogan: {
+    marginTop: 8,
+    fontSize: 14,
+    fontStyle: "italic",
+    color: "#9ca3af",
+    fontFamily: Platform.select({
+      ios: "Georgia",
+      android: "serif",
+      web: "'Crimson Text', Georgia, serif",
+    }),
+  },
+
+  footerColumnTitle: {
+    color: "white",
+    fontSize: 18,
+    fontWeight: "600",
+    marginBottom: 16,
+  },
+
+  footerLink: {
+    marginBottom: 12,
+  },
+
+  footerLinkText: {
+    color: "#94a3b8",
+    fontSize: 16,
+  },
+
+  footerButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: "center",
+    maxWidth: 200,
+  },
+
+  footerButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+
+  socialLinks: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+  },
+
+  footerBottom: {
+    borderTopWidth: 1,
+    borderTopColor: "#1e293b",
+    paddingTop: 32,
+    alignItems: "center",
+  },
+
+  footerCopyright: {
+    color: "#64748b",
+    textAlign: "center",
+    fontSize: 14,
   },
 });

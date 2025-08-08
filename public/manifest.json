@@ -1,0 +1,44 @@
+{
+  "name": "Murmure - Écriture libre et introspective",
+  "short_name": "Murmure",
+  "description": "Un refuge numérique pour tes pensées les plus intimes. Écris sans filtre, sans jugement.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fffbeb",
+  "theme_color": "#92400e",
+  "orientation": "portrait",
+  "scope": "/",
+  "lang": "fr",
+
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "type": "image/png",
+      "sizes": "32x32"
+    },
+    {
+      "src": "/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    },
+    {
+      "src": "/icon-192-maskable.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-512-maskable.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "maskable"
+    }
+  ],
+
+  "categories": ["lifestyle", "productivity", "utilities"]
+}

@@ -5,27 +5,29 @@
     "scheme": "murmure",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/logo-murmure.png",
     "userInterfaceStyle": "automatic",
     "splash": {
       "image": "./assets/images/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#1a1a2e"
+      "contentFit": "contain",
+      "backgroundColor": "#fffbeb"
     },
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.yourname.murmure"
+      "bundleIdentifier": "com.yourname.murmure",
+      "infoPlist": {
+        "CFBundleDisplayName": "Murmure",
+        "CFBundleName": "Murmure"
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#1a1a2e"
+        "backgroundColor": "#fffbeb"
       },
       "package": "com.yourname.murmure",
-      "permissions": [
-        "android.permission.VIBRATE"
-      ],
+      "permissions": ["android.permission.VIBRATE"],
       "blockedPermissions": [
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE"
@@ -33,7 +35,17 @@
     },
     "web": {
       "favicon": "./assets/images/favicon.png",
-      "name": "Murmure - Ton espace d'écriture libre"
+      "name": "Murmure - Ton espace d'écriture libre",
+      "shortName": "Murmure",
+      "lang": "fr",
+      "scope": "/",
+      "themeColor": "#92400e",
+      "backgroundColor": "#fffbeb",
+      "display": "standalone",
+      "orientation": "portrait",
+      "startUrl": "/",
+      "description": "Un refuge numérique pour tes pensées les plus intimes. Écris sans filtre, sans jugement.",
+      "bundler": "metro"
     },
     "extra": {
       "description": "Une app d'écriture libre pour exprimer tes pensées sans filtre"
