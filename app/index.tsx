@@ -4,12 +4,15 @@ import {
   Text,
   TouchableOpacity,
   ScrollView,
+  StyleSheet,
   Platform,
   Dimensions,
-  StyleSheet,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useAdvancedTheme } from "@/hooks/useAdvancedTheme";
+import { Image } from "expo-image";
+import { mainPageStyles } from "@/styles";
+import BurgerMenu from "@/components/BurgerMenu";
 
 // Types pour les props des composants
 interface FeatureCardProps {
@@ -39,123 +42,144 @@ interface DynamicStyles {
 }
 
 // Mémorisation du HEAD/Meta tags
-const SEOHead = memo(() => (
-  <head>
-    {/* Titre et meta description */}
-    <title>Murmure - Écriture libre et introspective | App gratuite</title>
-    <meta
-      name="description"
-      content="Découvrez Murmure, l'app d'écriture libre pour explorer vos pensées sans jugement. Thèmes personnalisables, mode focus, 100% gratuit et privé."
-    />
-    <meta
-      name="keywords"
-      content="écriture libre, journal intime, mindfulness, bien-être mental, app gratuite, méditation, introspection, pensées, écriture thérapeutique"
-    />
+const SEOHead = memo(() => {
+  if (Platform.OS !== "web") return null;
 
-    {/* Viewport et responsive */}
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  return (
+    <head>
+      {/* Titre et meta description */}
+      <title>Murmure - Écriture libre et introspective | App gratuite</title>
+      <meta
+        name="description"
+        content="Découvrez Murmure, l'app d'écriture libre pour explorer vos pensées sans jugement. Thèmes personnalisables, mode focus, 100% gratuit et privé."
+      />
+      <meta
+        name="keywords"
+        content="écriture libre, journal intime, mindfulness, bien-être mental, app gratuite, méditation, introspection, pensées, écriture thérapeutique"
+      />
 
-    {/* Open Graph / Facebook */}
-    <meta property="og:type" content="website" />
-    <meta
-      property="og:title"
-      content="Murmure - Écriture libre et introspective"
-    />
-    <meta
-      property="og:description"
-      content="Un refuge numérique pour tes pensées les plus intimes. Écris sans filtre, sans jugement."
-    />
-    <meta property="og:url" content="https://murmure.app" />
-    <meta property="og:site_name" content="Murmure" />
-    <meta property="og:locale" content="fr_FR" />
-    <meta property="og:image" content="https://murmure.app/og-image.jpg" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta
-      property="og:image:alt"
-      content="Murmure - App d'écriture libre et introspective"
-    />
+      {/* Viewport et responsive */}
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    {/* Twitter Card */}
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta
-      name="twitter:title"
-      content="Murmure - Écriture libre et introspective"
-    />
-    <meta
-      name="twitter:description"
-      content="Un refuge numérique pour tes pensées les plus intimes"
-    />
-    <meta name="twitter:image" content="https://murmure.app/twitter-card.jpg" />
-    <meta name="twitter:creator" content="@MurmureApp" />
+      {/* Open Graph / Facebook */}
+      <meta property="og:type" content="website" />
+      <meta
+        property="og:title"
+        content="Murmure - Écriture libre et introspective"
+      />
+      <meta
+        property="og:description"
+        content="Un refuge numérique pour tes pensées les plus intimes. Écris sans filtre, sans jugement."
+      />
+      <meta property="og:url" content="https://murmure.app" />
+      <meta property="og:site_name" content="Murmure" />
+      <meta property="og:locale" content="fr_FR" />
+      <meta property="og:image" content="https://murmure.app/og-image.jpg" />
+      <meta property="og:image:width" content="1200" />
+      <meta property="og:image:height" content="630" />
+      <meta
+        property="og:image:alt"
+        content="Murmure - App d'écriture libre et introspective"
+      />
 
-    {/* Favicon et icônes */}
-    <link rel="icon" href="/favicon.ico" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-    <link rel="manifest" href="/site.webmanifest" />
+      {/* Twitter Card */}
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta
+        name="twitter:title"
+        content="Murmure - Écriture libre et introspective"
+      />
+      <meta
+        name="twitter:description"
+        content="Un refuge numérique pour tes pensées les plus intimes"
+      />
+      <meta
+        name="twitter:image"
+        content="https://murmure.app/twitter-card.jpg"
+      />
+      <meta name="twitter:creator" content="@MurmureApp" />
 
-    {/* Canonical URL */}
-    <link rel="canonical" href="https://murmure.app" />
+      {/* Favicon et icônes */}
+      <link rel="icon" href="/favicon.ico" />
+      <link
+        rel="apple-touch-icon"
+        sizes="180x180"
+        href="/apple-touch-icon.png"
+      />
+      <link
+        rel="icon"
+        type="image/png"
+        sizes="32x32"
+        href="/favicon-32x32.png"
+      />
+      <link
+        rel="icon"
+        type="image/png"
+        sizes="16x16"
+        href="/favicon-16x16.png"
+      />
+      <link rel="manifest" href="/site.webmanifest" />
 
-    {/* Données structurées JSON-LD */}
-    <script type="application/ld+json">
-      {JSON.stringify({
-        "@context": "https://schema.org",
-        "@type": "MobileApplication",
-        name: "Murmure",
-        description:
-          "App d'écriture libre et introspective pour explorer vos pensées sans jugement",
-        applicationCategory: "LifestyleApplication",
-        operatingSystem: ["Android", "iOS", "Web"],
-        url: "https://murmure.app",
-        downloadUrl:
-          "https://play.google.com/store/apps/details?id=com.yourname.murmure",
-        author: {
-          "@type": "Organization",
-          name: "Équipe Murmure",
+      {/* Canonical URL */}
+      <link rel="canonical" href="https://murmure.app" />
+
+      {/* Données structurées JSON-LD */}
+      <script type="application/ld+json">
+        {JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "MobileApplication",
+          name: "Murmure",
+          description:
+            "App d'écriture libre et introspective pour explorer vos pensées sans jugement",
+          applicationCategory: "LifestyleApplication",
+          operatingSystem: ["Android", "iOS", "Web"],
           url: "https://murmure.app",
-        },
-        offers: {
-          "@type": "Offer",
-          price: "0",
-          priceCurrency: "EUR",
-          availability: "https://schema.org/InStock",
-        },
-        aggregateRating: {
-          "@type": "AggregateRating",
-          ratingValue: "4.8",
-          ratingCount: "1247",
-          bestRating: "5",
-          worstRating: "1",
-        },
-        featureList: [
-          "Écriture libre sans distraction",
-          "Mode focus avec minuterie",
-          "Thèmes personnalisables",
-          "Sauvegarde locale et export",
-          "100% gratuit et privé",
-        ],
-      })}
-    </script>
+          downloadUrl:
+            "https://play.google.com/store/apps/details?id=com.yourname.murmure",
+          author: {
+            "@type": "Organization",
+            name: "Équipe Murmure",
+            url: "https://murmure.app",
+          },
+          offers: {
+            "@type": "Offer",
+            price: "0",
+            priceCurrency: "EUR",
+            availability: "https://schema.org/InStock",
+          },
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: "4.8",
+            ratingCount: "1247",
+            bestRating: "5",
+            worstRating: "1",
+          },
+          featureList: [
+            "Écriture libre sans distraction",
+            "Mode focus avec minuterie",
+            "Thèmes personnalisables",
+            "Sauvegarde locale et export",
+            "100% gratuit et privé",
+          ],
+        })}
+      </script>
 
-    {/* Meta tags supplémentaires pour le SEO */}
-    <meta name="robots" content="index, follow" />
-    <meta name="language" content="French" />
-    <meta name="author" content="Équipe Murmure" />
-    <meta name="copyright" content="© 2025 Murmure. Tous droits réservés." />
-    <meta name="theme-color" content="#92400e" />
+      {/* Meta tags supplémentaires pour le SEO */}
+      <meta name="robots" content="index, follow" />
+      <meta name="language" content="French" />
+      <meta name="author" content="Équipe Murmure" />
+      <meta name="copyright" content="© 2025 Murmure. Tous droits réservés." />
+      <meta name="theme-color" content="#92400e" />
 
-    {/* Preconnect pour optimiser les performances */}
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link
-      rel="preconnect"
-      href="https://fonts.gstatic.com"
-      crossOrigin="anonymous"
-    />
-  </head>
-));
+      {/* Preconnect pour optimiser les performances */}
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link
+        rel="preconnect"
+        href="https://fonts.gstatic.com"
+        crossOrigin="anonymous"
+      />
+    </head>
+  );
+});
 
 SEOHead.displayName = "SEOHead";
 
@@ -222,7 +246,6 @@ FAQItem.displayName = "FAQItem";
 // Composant principal optimisé
 const MurmureLanding = memo(() => {
   const router = useRouter();
-  const { width } = Dimensions.get("window");
   const { currentTheme, changeTheme } = useAdvancedTheme({
     defaultTheme: "papyrus",
     defaultMode: "light",
@@ -338,6 +361,8 @@ const MurmureLanding = memo(() => {
     ],
     []
   );
+const { width } = Dimensions.get("window");
+const logoSize = width > 768 ? 100 : width > 400 ? 80 : 60;
 
   return (
     <>
@@ -352,46 +377,22 @@ const MurmureLanding = memo(() => {
         <View style={[styles.header, dynamicStyles.headerBackground]}>
           <View style={styles.headerContent}>
             <View style={styles.logo}>
-              <Text style={styles.logoIcon} accessibilityElementsHidden={true}>
-                🌙
-              </Text>
-              <Text style={[styles.logoText, { color: currentTheme.text }]}>
-                Murmure
-              </Text>
+              <Image
+                source={require("@/assets/images/logo-murmure.png")}
+                style={[
+                  mainPageStyles.logoImage,
+                  { width: logoSize, height: logoSize }, // Override dynamique
+                ]}
+                accessible={true}
+                accessibilityLabel="Logo de Murmure"
+              />
             </View>
 
-            {width > 768 && (
-              <View style={styles.nav}>
-                <TouchableOpacity
-                  style={styles.navItem}
-                  accessible={true}
-                  accessibilityRole="link"
-                  accessibilityLabel="À propos de Murmure"
-                >
-                  <Text
-                    style={[
-                      styles.navText,
-                      { color: currentTheme.textSecondary },
-                    ]}
-                    onPress={() => router.push("/about")}
-                  >
-                    À propos
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.primaryButton,
-                    { backgroundColor: currentTheme.accent },
-                  ]}
-                  onPress={handleDownloadClick}
-                  accessible={true}
-                  accessibilityRole="button"
-                  accessibilityLabel="Télécharger l'application Murmure"
-                >
-                  <Text style={styles.primaryButtonText}>📲 Télécharger</Text>
-                </TouchableOpacity>
-              </View>
-            )}
+            <BurgerMenu
+              currentTheme={currentTheme}
+              router={router}
+              handleDownloadClick={handleDownloadClick}
+            />
           </View>
         </View>
 

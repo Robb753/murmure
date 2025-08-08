@@ -1,6 +1,10 @@
 import { DimensionValue, Platform, StyleSheet } from "react-native";
 
 export const mainPageStyles = StyleSheet.create({
+  logoImage: {
+    resizeMode: "contain" as const,
+  },
+
   mainArea: {
     flex: 1,
   },
@@ -54,7 +58,7 @@ export const mainPageStyles = StyleSheet.create({
   footer: {
     flexDirection: "row" as const,
     justifyContent: "space-between" as const,
-    alignItems: "center" as const, 
+    alignItems: "center" as const,
     paddingHorizontal: 20,
     paddingVertical: Platform.OS === "web" ? 6 : 8,
     borderTopWidth: 1,
@@ -163,7 +167,7 @@ export const createResponsiveMainStyles = (design: any) => {
             : 6 // ✅ RÉDUIT: était 6/8
           : design.isSmallScreen
           ? 6
-          : 8, // ✅ RÉDUIT: était 10/12
+          : 8,
       borderBottomWidth: 1,
       alignItems: "center" as const,
       justifyContent: "center" as const,
