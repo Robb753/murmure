@@ -702,3 +702,142 @@ export const landingStyles = StyleSheet.create({
     fontSize: 14,
   },
 });
+
+// Type pour les paramètres de design responsive
+interface ResponsiveDesign {
+  containerPadding: number;
+  isSmallScreen: boolean;
+  insets: {
+    top: number;
+    bottom: number;
+    left: number;
+    right: number;
+  };
+}
+
+export const createResponsiveMainStyles = (design: ResponsiveDesign) => {
+  return StyleSheet.create({
+    // Header responsive
+    responsiveHeader: {
+      paddingHorizontal: design.containerPadding,
+      minHeight: design.isSmallScreen ? 44 : 48,
+      paddingVertical: design.isSmallScreen ? 8 : 12,
+    },
+
+    responsiveHeaderButton: {
+      paddingHorizontal: design.isSmallScreen ? 10 : 12,
+      paddingVertical: design.isSmallScreen ? 5 : 6,
+      borderRadius: design.isSmallScreen ? 6 : 8,
+    },
+
+    // Zone d'écriture responsive
+    responsiveWritingContainer: {
+      paddingHorizontal: design.isSmallScreen ? 16 : 20,
+      paddingVertical: design.isSmallScreen ? 16 : 20,
+    },
+
+    responsivePaperSheet: {
+      padding: design.isSmallScreen ? 20 : 24,
+      borderRadius: design.isSmallScreen ? 12 : 16,
+      maxWidth: design.isSmallScreen ? "100%" : 1150,
+    },
+
+    // Footer responsive
+    responsiveFooter: {
+      paddingHorizontal: design.containerPadding,
+      paddingVertical: design.isSmallScreen ? 6 : 8,
+      minHeight: design.isSmallScreen ? 40 : 42,
+    },
+
+    responsiveFooterButton: {
+      paddingHorizontal: design.isSmallScreen ? 4 : 6,
+      paddingVertical: design.isSmallScreen ? 2 : 3,
+      borderRadius: design.isSmallScreen ? 4 : 6,
+      minWidth: design.isSmallScreen ? 24 : 28,
+    },
+
+    // Timer responsive
+    responsiveTimerSection: {
+      paddingHorizontal: design.containerPadding,
+      paddingVertical: design.isSmallScreen ? 8 : 12,
+      gap: design.isSmallScreen ? 6 : 8,
+    },
+
+    responsiveDurationButton: {
+      paddingHorizontal: design.isSmallScreen ? 10 : 12,
+      paddingVertical: design.isSmallScreen ? 5 : 6,
+      borderRadius: design.isSmallScreen ? 8 : 12,
+      minWidth: design.isSmallScreen ? 45 : 50,
+    },
+
+    responsiveTimerButton: {
+      paddingHorizontal: design.isSmallScreen ? 14 : 16,
+      paddingVertical: design.isSmallScreen ? 6 : 8,
+      borderRadius: design.isSmallScreen ? 8 : 12,
+      minWidth: design.isSmallScreen ? 120 : 140,
+    },
+
+    // Autres styles responsive
+    responsiveTextInput: {
+      paddingHorizontal: design.isSmallScreen ? 12 : 15,
+      paddingVertical: design.isSmallScreen ? 12 : 15,
+    },
+
+    responsiveSidebar: {
+      width: design.isSmallScreen ? 300 : 350,
+    },
+
+    responsiveModal: {
+      marginHorizontal: design.containerPadding,
+      padding: design.isSmallScreen ? 20 : 24,
+      borderRadius: design.isSmallScreen ? 12 : 16,
+    },
+
+    responsiveFocusMode: {
+      paddingTop: design.insets.top + (design.isSmallScreen ? 50 : 55),
+      paddingBottom: design.insets.bottom + (design.isSmallScreen ? 50 : 55),
+      paddingHorizontal:
+        design.containerPadding + (design.isSmallScreen ? 5 : 10),
+    },
+
+    responsiveFocusControls: {
+      top: design.insets.top + (design.isSmallScreen ? 15 : 20),
+      left: design.isSmallScreen ? 20 : 30,
+      right: design.isSmallScreen ? 20 : 30,
+    },
+
+    responsiveFocusTimer: {
+      top: design.insets.top + (design.isSmallScreen ? 15 : 20),
+      right: design.isSmallScreen ? 20 : 30,
+    },
+
+    // Animations et transitions (web only)
+    webTransitions:
+      Platform.OS === "web"
+        ? ({
+            transition: "all 0.2s ease",
+          } as any)
+        : {},
+
+    responsiveShadow: {
+      shadowColor: "#000",
+      shadowOffset: {
+        width: 0,
+        height: design.isSmallScreen ? 2 : 4,
+      },
+      shadowOpacity: design.isSmallScreen ? 0.1 : 0.15,
+      shadowRadius: design.isSmallScreen ? 4 : 8,
+      elevation: design.isSmallScreen ? 4 : 8,
+    },
+
+    adaptiveLayout: {
+      flexDirection: design.isSmallScreen ? "column" : "row",
+      gap: design.isSmallScreen ? 8 : 12,
+    },
+
+    adaptiveSpacing: {
+      marginVertical: design.isSmallScreen ? 8 : 12,
+      marginHorizontal: design.isSmallScreen ? 12 : 16,
+    },
+  });
+};

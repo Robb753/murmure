@@ -241,35 +241,35 @@ export default function TabOneScreen() {
   // ===============================
   // NOUVELLES FONCTIONS SIMPLIFIÉES
   // ===============================
-const createWebHoverHandlers = (
-  currentTheme: any,
-  isActive: boolean = false
-) => {
-  if (Platform.OS !== "web") {
-    return { onMouseEnter: undefined, onMouseLeave: undefined };
-  }
+  const createWebHoverHandlers = (
+    currentTheme: any,
+    isActive: boolean = false
+  ) => {
+    if (Platform.OS !== "web") {
+      return { onMouseEnter: undefined, onMouseLeave: undefined };
+    }
 
-  return {
-    onMouseEnter: (e: any) => {
-      const target = e.currentTarget;
-      target.style.cursor = isActive ? "pointer" : "not-allowed";
-      if (isActive) {
-        target.style.backgroundColor = currentTheme.surface;
-        target.style.transform = "translateY(-1px)";
-        target.style.boxShadow = `0 2px 8px ${currentTheme.accent}20`;
-        target.style.transition = "all 0.2s ease";
-      }
-    },
-    onMouseLeave: (e: any) => {
-      const target = e.currentTarget;
-      if (isActive) {
-        target.style.backgroundColor = "transparent";
-        target.style.transform = "translateY(0px)";
-        target.style.boxShadow = "none";
-      }
-    },
+    return {
+      onMouseEnter: (e: any) => {
+        const target = e.currentTarget;
+        target.style.cursor = isActive ? "pointer" : "not-allowed";
+        if (isActive) {
+          target.style.backgroundColor = currentTheme.surface;
+          target.style.transform = "translateY(-1px)";
+          target.style.boxShadow = `0 2px 8px ${currentTheme.accent}20`;
+          target.style.transition = "all 0.2s ease";
+        }
+      },
+      onMouseLeave: (e: any) => {
+        const target = e.currentTarget;
+        if (isActive) {
+          target.style.backgroundColor = "transparent";
+          target.style.transform = "translateY(0px)";
+          target.style.boxShadow = "none";
+        }
+      },
+    };
   };
-};
 
   // ✅ Export d'une entrée (txt ou md + presse-papier)
   const exportEntry = useCallback(
@@ -542,7 +542,7 @@ const createWebHoverHandlers = (
       }
     },
     [showAlert]
-  ); 
+  );
 
   const cleanupOldFiles = useCallback(async () => {
     // Ne faire le nettoyage que sur mobile
@@ -571,8 +571,6 @@ const createWebHoverHandlers = (
     // Nettoyage des anciens fichiers au démarrage
     cleanupOldFiles();
   }, [cleanupOldFiles]);
-
-  
 
   // ✅ Générateur d'inspiration
   const getInspiration = useCallback(() => {
@@ -728,8 +726,6 @@ const createWebHoverHandlers = (
       handleStopTimer();
     }
   }, [toggleTimer, isTimerRunning, closeSidebar, fadeAnim, handleStopTimer]);
-
-
 
   const continueFocusSession = useCallback(() => {
     setShowFocusControls(false);
@@ -1238,609 +1234,609 @@ const createWebHoverHandlers = (
     );
   }
 
-// ✅ MODE NORMAL CORRIGÉ
-return (
-  <Provider>
-    <SafeAreaView
-      style={[
-        commonStyles.container,
-        {
-          backgroundColor: currentTheme.background,
-          paddingHorizontal: design.containerPadding,
-        },
-      ]}
-      edges={["top", "bottom"]}
-    >
-      <StatusBar style="dark" />
+  // ✅ MODE NORMAL CORRIGÉ
+  return (
+    <Provider>
+      <SafeAreaView
+        style={[
+          commonStyles.container,
+          {
+            backgroundColor: currentTheme.background,
+            paddingHorizontal: design.containerPadding,
+          },
+        ]}
+        edges={["top", "bottom"]}
+      >
+        <StatusBar style="dark" />
 
-      <View style={commonStyles.layout}>
-        <View style={mainPageStyles.mainArea}>
-          {/* ✅ Header corrigé avec structure en 3 colonnes */}
-          <View>
-            {/* Premier header avec les boutons principaux */}
+        <View style={commonStyles.layout}>
+          <View style={mainPageStyles.mainArea}>
+            {/* ✅ Header corrigé avec structure en 3 colonnes */}
+            <View>
+              {/* Premier header avec les boutons principaux */}
+              <View
+                style={[
+                  mainPageStyles.header,
+                  responsiveStyles.responsiveHeader,
+                  { borderBottomColor: currentTheme.border },
+                ]}
+              >
+                {/* Section gauche */}
+                <View style={{ flex: 1, alignItems: "flex-start" }}>
+                  <TouchableOpacity
+                    onPress={handleCreateNewSession}
+                    style={[
+                      mainPageStyles.headerButton,
+                      responsiveStyles.responsiveHeaderButton,
+                      { backgroundColor: currentTheme.surface },
+                    ]}
+                    {...createWebHoverHandlers(currentTheme, true)}
+                  >
+                    <Text
+                      style={[
+                        mainPageStyles.headerButtonText,
+                        {
+                          color: currentTheme.text,
+                          fontSize: Platform.OS === "web" ? 14 : 16,
+                        },
+                      ]}
+                    >
+                      + nouveau
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Section droite */}
+                <View style={{ flex: 1, alignItems: "flex-end" }}>
+                  <TouchableOpacity
+                    onPress={openSidebar}
+                    style={[
+                      mainPageStyles.headerButton,
+                      responsiveStyles.responsiveHeaderButton,
+                      {
+                        backgroundColor: sidebarOpen
+                          ? currentTheme.accent + "20"
+                          : currentTheme.surface,
+                      },
+                    ]}
+                    {...createWebHoverHandlers(currentTheme, !sidebarOpen)}
+                  >
+                    <Text
+                      style={[
+                        mainPageStyles.headerButtonText,
+                        {
+                          color: currentTheme.text,
+                          fontSize: Platform.OS === "web" ? 14 : 16,
+                        },
+                      ]}
+                    >
+                      historique
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Section timer séparée */}
+              <View
+                style={{
+                  paddingHorizontal: design.containerPadding,
+                  paddingVertical: Platform.OS === "web" ? 8 : 12,
+                  borderBottomWidth: 1,
+                  borderBottomColor: currentTheme.border,
+                  backgroundColor: currentTheme.background,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <View
+                  style={[
+                    timerStyles.timerSection,
+                    {
+                      flexDirection: "column",
+                      alignItems: "center",
+                      gap: 8,
+                    },
+                  ]}
+                >
+                  {/* Durées sur une ligne */}
+                  <View
+                    style={[
+                      timerStyles.durationButtons,
+                      {
+                        gap: Platform.OS === "web" ? 8 : 12,
+                        justifyContent: "center",
+                      },
+                    ]}
+                  >
+                    {[5, 10, 15].map((duration) => (
+                      <TouchableOpacity
+                        key={duration}
+                        onPress={() => selectDuration(duration)}
+                        style={[
+                          timerStyles.durationButton,
+                          {
+                            backgroundColor:
+                              selectedDuration === duration
+                                ? currentTheme.accent + "30"
+                                : currentTheme.surface,
+                            borderWidth: 1,
+                            borderColor:
+                              selectedDuration === duration
+                                ? currentTheme.accent
+                                : currentTheme.border,
+                            paddingHorizontal: Platform.OS === "web" ? 12 : 16,
+                            paddingVertical: Platform.OS === "web" ? 6 : 8,
+                            borderRadius: 12,
+                            minWidth: Platform.OS === "web" ? 50 : 60,
+                          },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            timerStyles.durationButtonText,
+                            {
+                              color:
+                                selectedDuration === duration
+                                  ? currentTheme.accent
+                                  : currentTheme.textSecondary,
+                              fontSize: Platform.OS === "web" ? 12 : 14,
+                              fontWeight:
+                                selectedDuration === duration ? "600" : "400",
+                            },
+                          ]}
+                        >
+                          {duration}min
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+
+                  {/* Bouton timer sur la ligne suivante */}
+                  <TouchableOpacity
+                    onPress={handleToggleTimer}
+                    style={[
+                      timerStyles.timerButton,
+                      {
+                        backgroundColor: isTimerRunning
+                          ? currentTheme.accent + "20"
+                          : currentTheme.surface,
+                        borderWidth: 1,
+                        borderColor: isTimerRunning
+                          ? currentTheme.accent
+                          : currentTheme.border,
+                        paddingHorizontal: Platform.OS === "web" ? 16 : 20,
+                        paddingVertical: Platform.OS === "web" ? 8 : 10,
+                        borderRadius: 12,
+                        minWidth: Platform.OS === "web" ? 140 : 160,
+                      },
+                    ]}
+                  >
+                    <View style={timerStyles.timerContent}>
+                      <Text
+                        style={[
+                          timerStyles.timerIcon,
+                          {
+                            color: isTimerRunning
+                              ? currentTheme.accent
+                              : currentTheme.textSecondary,
+                            fontSize: Platform.OS === "web" ? 14 : 16,
+                          },
+                        ]}
+                      >
+                        {isTimerRunning ? "⏸" : "▶"}
+                      </Text>
+                      <Text
+                        style={[
+                          timerStyles.timerText,
+                          {
+                            color: isTimerRunning
+                              ? currentTheme.accent
+                              : currentTheme.text,
+                            fontSize: Platform.OS === "web" ? 14 : 16,
+                            fontWeight: "600",
+                          },
+                        ]}
+                      >
+                        {formatTime(timeRemaining)}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+
+            {/* Zone d'écriture */}
             <View
               style={[
-                mainPageStyles.header,
-                responsiveStyles.responsiveHeader,
-                { borderBottomColor: currentTheme.border },
+                mainPageStyles.writingContainer,
+                responsiveStyles.responsiveWritingContainer,
+                {
+                  // ✅ NOUVEAU: Augmenter la zone de texte en mode normal
+                  paddingVertical: 5, // ✅ RÉDUIT: pour plus d'espace au texte
+                  paddingHorizontal: 10, // ✅ RÉDUIT: pour plus de largeur
+                },
               ]}
             >
-              {/* Section gauche */}
-              <View style={{ flex: 1, alignItems: "flex-start" }}>
-                <TouchableOpacity
-                  onPress={handleCreateNewSession}
+              <View
+                style={[
+                  mainPageStyles.paperSheet,
+                  responsiveStyles.responsivePaperSheet,
+                  {
+                    // ✅ NOUVEAU: Optimiser l'espace du paperSheet
+                    marginBottom: 1, // ✅ RÉDUIT: était 20
+                    padding: 15, // ✅ RÉDUIT: pour maximiser l'espace de texte
+                  },
+                ]}
+              >
+                {text.trim() === "" && (
+                  <View
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 5,
+                      justifyContent: "center",
+                      alignItems: "center",
+                      pointerEvents: "none",
+                      zIndex: 1,
+                      paddingHorizontal: 30,
+                      paddingVertical: 30,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: currentTheme.muted,
+                        fontSize: fontSize,
+                        fontFamily: selectedFont,
+                        textAlign: "center",
+                        opacity: 0.7,
+                      }}
+                    >
+                      {currentInspiration || placeholder}
+                    </Text>
+                  </View>
+                )}
+
+                <TextInput
+                  ref={textInputRef}
+                  key={`${fontSize}-${selectedFont}`}
                   style={[
-                    mainPageStyles.headerButton,
-                    responsiveStyles.responsiveHeaderButton,
-                    { backgroundColor: currentTheme.surface },
+                    mainPageStyles.textInput,
+                    {
+                      color: currentTheme.text,
+                      fontSize: design.isSmallScreen
+                        ? Math.max(fontSize - 2, 16)
+                        : fontSize,
+                      lineHeight:
+                        (design.isSmallScreen
+                          ? Math.max(fontSize - 2, 16)
+                          : fontSize) * 1.6,
+                      fontFamily: selectedFont,
+                      textAlign: "left",
+                      textAlignVertical: "top",
+                      borderWidth: 0,
+                      borderColor: "transparent",
+                      paddingHorizontal: 15,
+                      paddingVertical: 15,
+                      ...(Platform.OS === "web" && {
+                        outline: "none",
+                        border: "none",
+                        boxShadow: "none",
+                      }),
+                    },
+                  ]}
+                  value={text}
+                  onChangeText={setText}
+                  placeholder=""
+                  placeholderTextColor={currentTheme.muted}
+                  multiline
+                  textAlign="left"
+                  textAlignVertical="center"
+                  autoCorrect={false}
+                  spellCheck={false}
+                  autoCapitalize="none"
+                  scrollEnabled={true}
+                  selectionColor={currentTheme.accent + "40"}
+                  underlineColorAndroid="transparent"
+                />
+              </View>
+            </View>
+
+            {/* Footer */}
+            <View
+              style={[
+                mainPageStyles.footer,
+                responsiveStyles.responsiveFooter,
+                { borderTopColor: currentTheme.border },
+              ]}
+            >
+              <View
+                style={[
+                  mainPageStyles.footerLeft,
+                  {
+                    flexDirection: "row",
+                    alignItems: "center",
+                    flex: 0,
+                    minWidth: 80,
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    mainPageStyles.wordCount,
+                    { color: currentTheme.textSecondary, flexShrink: 0 },
+                  ]}
+                  numberOfLines={1}
+                >
+                  {wordCount} mot{wordCount > 1 ? "s" : ""}
+                </Text>
+              </View>
+
+              <View style={[mainPageStyles.footerCenter, { flex: 1 }]}>
+                {isTimerRunning && (
+                  <Text
+                    style={[
+                      mainPageStyles.runningIndicator,
+                      { color: currentTheme.accent },
+                    ]}
+                    numberOfLines={1}
+                  >
+                    ● session en cours • {formatTime(timeRemaining)}
+                  </Text>
+                )}
+              </View>
+
+              {/* Footer droit */}
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "flex-end",
+                  gap: design.isSmallScreen ? 8 : 12,
+                  minWidth: 200,
+                  flex: 0,
+                }}
+              >
+                {/* Taille de police */}
+                <TouchableOpacity
+                  onPress={toggleFontSizeMenu}
+                  style={[
+                    mainPageStyles.footerButton,
+                    responsiveStyles.responsiveFooterButton,
                   ]}
                   {...createWebHoverHandlers(currentTheme, true)}
                 >
                   <Text
                     style={[
-                      mainPageStyles.headerButtonText,
-                      {
-                        color: currentTheme.text,
-                        fontSize: Platform.OS === "web" ? 14 : 16,
-                      },
+                      mainPageStyles.footerButtonText,
+                      { color: currentTheme.textSecondary },
                     ]}
                   >
-                    + nouveau
+                    {fontSize}px
                   </Text>
                 </TouchableOpacity>
-              </View>
 
-              {/* Section droite */}
-              <View style={{ flex: 1, alignItems: "flex-end" }}>
+                {/* Police aléatoire */}
                 <TouchableOpacity
-                  onPress={openSidebar}
+                  onPress={changeRandomFont}
                   style={[
-                    mainPageStyles.headerButton,
-                    responsiveStyles.responsiveHeaderButton,
-                    {
-                      backgroundColor: sidebarOpen
-                        ? currentTheme.accent + "20"
-                        : currentTheme.surface,
-                    },
+                    mainPageStyles.footerButton,
+                    responsiveStyles.responsiveFooterButton,
                   ]}
-                  {...createWebHoverHandlers(currentTheme, !sidebarOpen)}
+                  {...createWebHoverHandlers(currentTheme, true)}
                 >
                   <Text
                     style={[
-                      mainPageStyles.headerButtonText,
-                      {
-                        color: currentTheme.text,
-                        fontSize: Platform.OS === "web" ? 14 : 16,
-                      },
+                      mainPageStyles.footerButtonText,
+                      { color: currentTheme.textSecondary },
                     ]}
                   >
-                    historique
+                    Aa
                   </Text>
                 </TouchableOpacity>
-              </View>
-            </View>
 
-            {/* Section timer séparée */}
-            <View
-              style={{
-                paddingHorizontal: design.containerPadding,
-                paddingVertical: Platform.OS === "web" ? 8 : 12,
-                borderBottomWidth: 1,
-                borderBottomColor: currentTheme.border,
-                backgroundColor: currentTheme.background,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <View
-                style={[
-                  timerStyles.timerSection,
-                  {
-                    flexDirection: "column",
-                    alignItems: "center",
-                    gap: 8,
-                  },
-                ]}
-              >
-                {/* Durées sur une ligne */}
-                <View
-                  style={[
-                    timerStyles.durationButtons,
-                    {
-                      gap: Platform.OS === "web" ? 8 : 12,
-                      justifyContent: "center",
-                    },
-                  ]}
-                >
-                  {[5, 10, 15].map((duration) => (
-                    <TouchableOpacity
-                      key={duration}
-                      onPress={() => selectDuration(duration)}
-                      style={[
-                        timerStyles.durationButton,
-                        {
-                          backgroundColor:
-                            selectedDuration === duration
-                              ? currentTheme.accent + "30"
-                              : currentTheme.surface,
-                          borderWidth: 1,
-                          borderColor:
-                            selectedDuration === duration
-                              ? currentTheme.accent
-                              : currentTheme.border,
-                          paddingHorizontal: Platform.OS === "web" ? 12 : 16,
-                          paddingVertical: Platform.OS === "web" ? 6 : 8,
-                          borderRadius: 12,
-                          minWidth: Platform.OS === "web" ? 50 : 60,
-                        },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          timerStyles.durationButtonText,
-                          {
-                            color:
-                              selectedDuration === duration
-                                ? currentTheme.accent
-                                : currentTheme.textSecondary,
-                            fontSize: Platform.OS === "web" ? 12 : 14,
-                            fontWeight:
-                              selectedDuration === duration ? "600" : "400",
-                          },
-                        ]}
-                      >
-                        {duration}min
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-
-                {/* Bouton timer sur la ligne suivante */}
+                {/* Thème */}
                 <TouchableOpacity
-                  onPress={handleToggleTimer}
+                  onPress={() => setShowThemeSelector(true)}
                   style={[
-                    timerStyles.timerButton,
-                    {
-                      backgroundColor: isTimerRunning
-                        ? currentTheme.accent + "20"
-                        : currentTheme.surface,
-                      borderWidth: 1,
-                      borderColor: isTimerRunning
-                        ? currentTheme.accent
-                        : currentTheme.border,
-                      paddingHorizontal: Platform.OS === "web" ? 16 : 20,
-                      paddingVertical: Platform.OS === "web" ? 8 : 10,
-                      borderRadius: 12,
-                      minWidth: Platform.OS === "web" ? 140 : 160,
-                    },
+                    mainPageStyles.footerButton,
+                    responsiveStyles.responsiveFooterButton,
                   ]}
-                >
-                  <View style={timerStyles.timerContent}>
-                    <Text
-                      style={[
-                        timerStyles.timerIcon,
-                        {
-                          color: isTimerRunning
-                            ? currentTheme.accent
-                            : currentTheme.textSecondary,
-                          fontSize: Platform.OS === "web" ? 14 : 16,
-                        },
-                      ]}
-                    >
-                      {isTimerRunning ? "⏸" : "▶"}
-                    </Text>
-                    <Text
-                      style={[
-                        timerStyles.timerText,
-                        {
-                          color: isTimerRunning
-                            ? currentTheme.accent
-                            : currentTheme.text,
-                          fontSize: Platform.OS === "web" ? 14 : 16,
-                          fontWeight: "600",
-                        },
-                      ]}
-                    >
-                      {formatTime(timeRemaining)}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-
-          {/* Zone d'écriture */}
-          <View
-            style={[
-              mainPageStyles.writingContainer,
-              responsiveStyles.responsiveWritingContainer,
-              {
-                // ✅ NOUVEAU: Augmenter la zone de texte en mode normal
-                paddingVertical: 5, // ✅ RÉDUIT: pour plus d'espace au texte
-                paddingHorizontal: 10, // ✅ RÉDUIT: pour plus de largeur
-              },
-            ]}
-          >
-            <View
-              style={[
-                mainPageStyles.paperSheet,
-                responsiveStyles.responsivePaperSheet,
-                {
-                  // ✅ NOUVEAU: Optimiser l'espace du paperSheet
-                  marginBottom: 1, // ✅ RÉDUIT: était 20
-                  padding: 15, // ✅ RÉDUIT: pour maximiser l'espace de texte
-                },
-              ]}
-            >
-              {text.trim() === "" && (
-                <View
-                  style={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 5,
-                    justifyContent: "center",
-                    alignItems: "center",
-                    pointerEvents: "none",
-                    zIndex: 1,
-                    paddingHorizontal: 30,
-                    paddingVertical: 30,
-                  }}
+                  {...createWebHoverHandlers(currentTheme, true)}
                 >
                   <Text
-                    style={{
-                      color: currentTheme.muted,
-                      fontSize: fontSize,
-                      fontFamily: selectedFont,
-                      textAlign: "center",
-                      opacity: 0.7,
-                    }}
+                    style={[
+                      mainPageStyles.footerButtonText,
+                      { color: currentTheme.textSecondary },
+                    ]}
                   >
-                    {currentInspiration || placeholder}
+                    🎨
                   </Text>
-                </View>
-              )}
+                </TouchableOpacity>
 
-              <TextInput
-                ref={textInputRef}
-                key={`${fontSize}-${selectedFont}`}
-                style={[
-                  mainPageStyles.textInput,
-                  {
-                    color: currentTheme.text,
-                    fontSize: design.isSmallScreen
-                      ? Math.max(fontSize - 2, 16)
-                      : fontSize,
-                    lineHeight:
-                      (design.isSmallScreen
-                        ? Math.max(fontSize - 2, 16)
-                        : fontSize) * 1.6,
-                    fontFamily: selectedFont,
-                    textAlign: "left",
-                    textAlignVertical: "top",
-                    borderWidth: 0,
-                    borderColor: "transparent",
-                    paddingHorizontal: 15,
-                    paddingVertical: 15,
-                    ...(Platform.OS === "web" && {
-                      outline: "none",
-                      border: "none",
-                      boxShadow: "none",
-                    }),
-                  },
-                ]}
-                value={text}
-                onChangeText={setText}
-                placeholder=""
-                placeholderTextColor={currentTheme.muted}
-                multiline
-                textAlign="left"
-                textAlignVertical="center"
-                autoCorrect={false}
-                spellCheck={false}
-                autoCapitalize="none"
-                scrollEnabled={true}
-                selectionColor={currentTheme.accent + "40"}
-                underlineColorAndroid="transparent"
-              />
+                {/* Inspiration */}
+                <TouchableOpacity
+                  onPress={getInspiration}
+                  style={[
+                    mainPageStyles.footerButton,
+                    responsiveStyles.responsiveFooterButton,
+                  ]}
+                  {...createWebHoverHandlers(currentTheme, true)}
+                >
+                  <Text
+                    style={[
+                      mainPageStyles.footerButtonText,
+                      { color: currentTheme.textSecondary },
+                    ]}
+                  >
+                    💫
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Export */}
+                <TouchableOpacity
+                  onPress={() => {
+                    if (currentEntry && text.trim()) {
+                      exportEntry(currentEntry);
+                    } else {
+                      Alert.alert(
+                        "Rien à exporter",
+                        "Écrivez quelque chose d'abord"
+                      );
+                    }
+                  }}
+                  style={[
+                    mainPageStyles.footerButton,
+                    responsiveStyles.responsiveFooterButton,
+                    {
+                      opacity: currentEntry && text.trim() ? 1 : 0.5,
+                    },
+                  ]}
+                  {...createWebHoverHandlers(
+                    currentTheme,
+                    !!(currentEntry && text.trim())
+                  )}
+                >
+                  <Text
+                    style={[
+                      mainPageStyles.footerButtonText,
+                      { color: currentTheme.textSecondary },
+                    ]}
+                  >
+                    📤
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
+        </View>
 
-          {/* Footer */}
-          <View
-            style={[
-              mainPageStyles.footer,
-              responsiveStyles.responsiveFooter,
-              { borderTopColor: currentTheme.border },
-            ]}
+        {/* Modal sélection taille */}
+        <Modal
+          visible={showFontSizeMenu}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setShowFontSizeMenu(false)}
+        >
+          <TouchableOpacity
+            style={modalStyles.modalOverlay}
+            onPress={() => setShowFontSizeMenu(false)}
+            activeOpacity={1}
           >
             <View
               style={[
-                mainPageStyles.footerLeft,
+                modalStyles.modalContent,
                 {
-                  flexDirection: "row",
-                  alignItems: "center",
-                  flex: 0,
-                  minWidth: 80,
+                  backgroundColor: currentTheme.surface,
+                  borderColor: currentTheme.border,
+                  marginHorizontal: design.containerPadding,
                 },
               ]}
             >
               <Text
-                style={[
-                  mainPageStyles.wordCount,
-                  { color: currentTheme.textSecondary, flexShrink: 0 },
-                ]}
-                numberOfLines={1}
+                style={[modalStyles.modalTitle, { color: currentTheme.text }]}
               >
-                {wordCount} mot{wordCount > 1 ? "s" : ""}
+                taille du texte
               </Text>
-            </View>
-
-            <View style={[mainPageStyles.footerCenter, { flex: 1 }]}>
-              {isTimerRunning && (
-                <Text
+              {fontSizes.map((size) => (
+                <TouchableOpacity
+                  key={size}
+                  onPress={() => selectFontSize(size)}
                   style={[
-                    mainPageStyles.runningIndicator,
-                    { color: currentTheme.accent },
-                  ]}
-                  numberOfLines={1}
-                >
-                  ● session en cours • {formatTime(timeRemaining)}
-                </Text>
-              )}
-            </View>
-
-            {/* Footer droit */}
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "flex-end",
-                gap: design.isSmallScreen ? 8 : 12,
-                minWidth: 200,
-                flex: 0,
-              }}
-            >
-              {/* Taille de police */}
-              <TouchableOpacity
-                onPress={toggleFontSizeMenu}
-                style={[
-                  mainPageStyles.footerButton,
-                  responsiveStyles.responsiveFooterButton,
-                ]}
-                {...createWebHoverHandlers(currentTheme, true)}
-              >
-                <Text
-                  style={[
-                    mainPageStyles.footerButtonText,
-                    { color: currentTheme.textSecondary },
-                  ]}
-                >
-                  {fontSize}px
-                </Text>
-              </TouchableOpacity>
-
-              {/* Police aléatoire */}
-              <TouchableOpacity
-                onPress={changeRandomFont}
-                style={[
-                  mainPageStyles.footerButton,
-                  responsiveStyles.responsiveFooterButton,
-                ]}
-                {...createWebHoverHandlers(currentTheme, true)}
-              >
-                <Text
-                  style={[
-                    mainPageStyles.footerButtonText,
-                    { color: currentTheme.textSecondary },
-                  ]}
-                >
-                  Aa
-                </Text>
-              </TouchableOpacity>
-
-              {/* Thème */}
-              <TouchableOpacity
-                onPress={() => setShowThemeSelector(true)}
-                style={[
-                  mainPageStyles.footerButton,
-                  responsiveStyles.responsiveFooterButton,
-                ]}
-                {...createWebHoverHandlers(currentTheme, true)}
-              >
-                <Text
-                  style={[
-                    mainPageStyles.footerButtonText,
-                    { color: currentTheme.textSecondary },
-                  ]}
-                >
-                  🎨
-                </Text>
-              </TouchableOpacity>
-
-              {/* Inspiration */}
-              <TouchableOpacity
-                onPress={getInspiration}
-                style={[
-                  mainPageStyles.footerButton,
-                  responsiveStyles.responsiveFooterButton,
-                ]}
-                {...createWebHoverHandlers(currentTheme, true)}
-              >
-                <Text
-                  style={[
-                    mainPageStyles.footerButtonText,
-                    { color: currentTheme.textSecondary },
-                  ]}
-                >
-                  💫
-                </Text>
-              </TouchableOpacity>
-
-              {/* Export */}
-              <TouchableOpacity
-                onPress={() => {
-                  if (currentEntry && text.trim()) {
-                    exportEntry(currentEntry);
-                  } else {
-                    Alert.alert(
-                      "Rien à exporter",
-                      "Écrivez quelque chose d'abord"
-                    );
-                  }
-                }}
-                style={[
-                  mainPageStyles.footerButton,
-                  responsiveStyles.responsiveFooterButton,
-                  {
-                    opacity: currentEntry && text.trim() ? 1 : 0.5,
-                  },
-                ]}
-                {...createWebHoverHandlers(
-                  currentTheme,
-                  !!(currentEntry && text.trim())
-                )}
-              >
-                <Text
-                  style={[
-                    mainPageStyles.footerButtonText,
-                    { color: currentTheme.textSecondary },
-                  ]}
-                >
-                  📤
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </View>
-
-      {/* Modal sélection taille */}
-      <Modal
-        visible={showFontSizeMenu}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setShowFontSizeMenu(false)}
-      >
-        <TouchableOpacity
-          style={modalStyles.modalOverlay}
-          onPress={() => setShowFontSizeMenu(false)}
-          activeOpacity={1}
-        >
-          <View
-            style={[
-              modalStyles.modalContent,
-              {
-                backgroundColor: currentTheme.surface,
-                borderColor: currentTheme.border,
-                marginHorizontal: design.containerPadding,
-              },
-            ]}
-          >
-            <Text
-              style={[modalStyles.modalTitle, { color: currentTheme.text }]}
-            >
-              taille du texte
-            </Text>
-            {fontSizes.map((size) => (
-              <TouchableOpacity
-                key={size}
-                onPress={() => selectFontSize(size)}
-                style={[
-                  modalStyles.modalItem,
-                  {
-                    backgroundColor:
-                      size === fontSize
-                        ? currentTheme.accent + "20"
-                        : "transparent",
-                  },
-                ]}
-              >
-                <Text
-                  style={[
-                    modalStyles.modalItemText,
+                    modalStyles.modalItem,
                     {
-                      color:
+                      backgroundColor:
                         size === fontSize
-                          ? currentTheme.accent
-                          : currentTheme.text,
-                      fontWeight: size === fontSize ? "600" : "400",
+                          ? currentTheme.accent + "20"
+                          : "transparent",
                     },
                   ]}
                 >
-                  {size}px
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </TouchableOpacity>
-      </Modal>
+                  <Text
+                    style={[
+                      modalStyles.modalItemText,
+                      {
+                        color:
+                          size === fontSize
+                            ? currentTheme.accent
+                            : currentTheme.text,
+                        fontWeight: size === fontSize ? "600" : "400",
+                      },
+                    ]}
+                  >
+                    {size}px
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </TouchableOpacity>
+        </Modal>
 
-      {/* Overlay sidebar */}
-      {sidebarOpen && (
-        <Animated.View
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0, 0, 0, 0.4)",
-            zIndex: 999,
-            opacity: overlayAnimation,
-          }}
-        >
-          <TouchableOpacity
-            style={{ flex: 1 }}
-            onPress={closeSidebar}
-            activeOpacity={1}
-          />
-        </Animated.View>
-      )}
+        {/* Overlay sidebar */}
+        {sidebarOpen && (
+          <Animated.View
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "rgba(0, 0, 0, 0.4)",
+              zIndex: 999,
+              opacity: overlayAnimation,
+            }}
+          >
+            <TouchableOpacity
+              style={{ flex: 1 }}
+              onPress={closeSidebar}
+              activeOpacity={1}
+            />
+          </Animated.View>
+        )}
 
-      {/* Sidebar */}
-      {sidebarOpen && (
-        <Animated.View
-          style={{
-            position: "absolute",
-            top: 0,
-            right: 0,
-            bottom: 0,
-            width: design.isSmallScreen ? 320 : 350,
-            zIndex: 1000,
-            transform: [{ translateX: sidebarAnimation }],
-          }}
-        >
-          <EnhancedSidebar
+        {/* Sidebar */}
+        {sidebarOpen && (
+          <Animated.View
+            style={{
+              position: "absolute",
+              top: 0,
+              right: 0,
+              bottom: 0,
+              width: design.isSmallScreen ? 320 : 350,
+              zIndex: 1000,
+              transform: [{ translateX: sidebarAnimation }],
+            }}
+          >
+            <EnhancedSidebar
+              currentTheme={currentTheme}
+              currentEntry={currentEntry}
+              entries={entries}
+              trashEntries={trashEntries}
+              onClose={closeSidebar}
+              onLoadEntry={loadEntry}
+              onMoveToTrash={moveEntryToTrash}
+              onRestoreFromTrash={restoreFromTrash}
+              onDeletePermanently={deleteEntryPermanently}
+              onEmptyTrash={emptyTrash}
+              onExportEntry={exportEntry}
+            />
+          </Animated.View>
+        )}
+
+        {/* Sélecteur de thème */}
+        <ThemeSelector
+          visible={showThemeSelector}
+          onClose={() => setShowThemeSelector(false)}
           currentTheme={currentTheme}
-          currentEntry={currentEntry}
-          entries={entries}
-          trashEntries={trashEntries}
-          onClose={closeSidebar}
-          onLoadEntry={loadEntry}
-          onMoveToTrash={moveEntryToTrash}
-          onRestoreFromTrash={restoreFromTrash}
-          onDeletePermanently={deleteEntryPermanently}
-          onEmptyTrash={emptyTrash}
-          onExportEntry={exportEntry}
-          />
-        </Animated.View>
-      )}
-
-      {/* Sélecteur de thème */}
-      <ThemeSelector
-        visible={showThemeSelector}
-        onClose={() => setShowThemeSelector(false)}
-        currentTheme={currentTheme}
-        currentThemeName={currentThemeName}
-        isDarkMode={isDarkMode}
-        onThemeChange={changeTheme}
-        onToggleDarkMode={toggleDarkMode}
-        getThemesList={getThemesList}
-      />
-      <AlertModal />
-    </SafeAreaView>
-  </Provider>
-);
+          currentThemeName={currentThemeName}
+          isDarkMode={isDarkMode}
+          onThemeChange={changeTheme}
+          onToggleDarkMode={toggleDarkMode}
+          getThemesList={getThemesList}
+        />
+        <AlertModal />
+      </SafeAreaView>
+    </Provider>
+  );
 }

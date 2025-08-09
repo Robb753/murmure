@@ -16,6 +16,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.yourname.murmure",
+      "buildNumber": "1",
       "infoPlist": {
         "CFBundleDisplayName": "Murmure",
         "CFBundleName": "Murmure"
@@ -27,6 +28,7 @@
         "backgroundColor": "#fffbeb"
       },
       "package": "com.yourname.murmure",
+      "versionCode": 1,
       "permissions": ["android.permission.VIBRATE"],
       "blockedPermissions": [
         "android.permission.READ_EXTERNAL_STORAGE",

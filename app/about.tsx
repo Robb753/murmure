@@ -43,23 +43,44 @@ interface ValueCardProps {
 
 // Composant carte de valeur mémorisé
 const ValueCard = memo<ValueCardProps>(
-  ({ icon, title, description, currentTheme }) => (
-    <View style={[styles.valueCard, { backgroundColor: currentTheme.surface }]}>
-      <View style={styles.valueHeader}>
-        <Text style={styles.valueIcon} accessibilityElementsHidden={true}>
-          {icon}
-        </Text>
-        <Text style={[styles.valueTitle, { color: currentTheme.text }]}>
-          {title}
-        </Text>
+  ({ icon, title, description, currentTheme }) => {
+    // ✅ STYLES MÉMORISÉS
+    const cardStyle = useMemo(
+      () => [styles.valueCard, { backgroundColor: currentTheme.surface }],
+      [currentTheme.surface]
+    );
+
+    const titleStyle = useMemo(
+      () => [styles.valueTitle, { color: currentTheme.text }],
+      [currentTheme.text]
+    );
+
+    const descriptionStyle = useMemo(
+      () => [styles.valueDescription, { color: currentTheme.textSecondary }],
+      [currentTheme.textSecondary]
+    );
+
+    return (
+      <View style={cardStyle}>
+        <View style={styles.valueHeader}>
+          <Text style={styles.valueIcon} accessibilityElementsHidden={true}>
+            {icon}
+          </Text>
+          <Text style={titleStyle}>{title}</Text>
+        </View>
+        <Text style={descriptionStyle}>{description}</Text>
       </View>
-      <Text
-        style={[styles.valueDescription, { color: currentTheme.textSecondary }]}
-      >
-        {description}
-      </Text>
-    </View>
-  )
+    );
+  },
+  (prevProps, nextProps) => {
+    // ✅ COMPARAISON CUSTOM
+    return (
+      prevProps.icon === nextProps.icon &&
+      prevProps.title === nextProps.title &&
+      prevProps.description === nextProps.description &&
+      prevProps.currentTheme === nextProps.currentTheme
+    );
+  }
 );
 
 ValueCard.displayName = "ValueCard";

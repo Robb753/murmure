@@ -1,4 +1,3 @@
-// app/index.tsx
 import React, { useState, useCallback, useMemo, memo, useEffect } from "react";
 import {
   View,
