@@ -534,36 +534,101 @@ const MurmureLanding = memo(() => {
       {/* Features */}
       <View
         style={[
-          landingStyles.features,
           {
             backgroundColor: currentTheme.surface,
-            paddingHorizontal: isVerySmallMobile ? 12 : 16,
+            paddingVertical: 80,
+            paddingHorizontal: 16,
+            alignItems: "center",
+            justifyContent: "center",
           },
         ]}
       >
         <Text
-          style={[
-            landingStyles.sectionTitle,
-            {
-              color: currentTheme.text,
-              fontSize: isSmallMobile ? 28 : 36,
-            },
-          ]}
+          style={{
+            fontSize: isSmallMobile ? 28 : 36,
+            fontWeight: "700",
+            textAlign: "center",
+            marginBottom: 48,
+            color: currentTheme.text,
+            fontFamily: Platform.select({
+              ios: "Palatino",
+              android: "serif",
+              web: "'Crimson Text', 'Palatino Linotype', serif",
+            }),
+          }}
         >
           Fonctionnalités
         </Text>
 
+        {/* Container des cartes */}
         <View
-          style={[landingStyles.featureGrid, responsiveOverrides.featureGrid]}
+          style={{
+            width: "100%",
+            maxWidth: 400, // ✅ Largeur max pour mobile
+            alignItems: "center",
+            gap: 20,
+          }}
         >
           {featuresData.map((feature, index) => (
-            <FeatureCard
+            <View
               key={`feature-${index}`}
-              icon={feature.icon}
-              title={feature.title}
-              description={feature.description}
-              currentTheme={currentTheme}
-            />
+              style={{
+                backgroundColor: currentTheme.background,
+                padding: isSmallMobile ? 20 : 28,
+                borderRadius: 16,
+                alignItems: "center",
+                justifyContent: "center",
+
+                // ✅ LARGEUR QUI MARCHE PARTOUT
+                width: "100%",
+                maxWidth: 350,
+                minWidth: 280,
+                minHeight: 180,
+
+                // ✅ OMBRE ET BORDURE
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.1,
+                shadowRadius: 8,
+                elevation: 4,
+                borderWidth: 1,
+                borderColor: currentTheme.border + "60",
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 40,
+                  marginBottom: 12,
+                  textAlign: "center",
+                }}
+              >
+                {feature.icon}
+              </Text>
+
+              <Text
+                style={{
+                  fontSize: isSmallMobile ? 16 : 18,
+                  fontWeight: "600",
+                  color: currentTheme.text,
+                  textAlign: "center",
+                  marginBottom: 8,
+                  lineHeight: isSmallMobile ? 22 : 24,
+                }}
+              >
+                {feature.title}
+              </Text>
+
+              <Text
+                style={{
+                  fontSize: isSmallMobile ? 13 : 15,
+                  color: currentTheme.textSecondary,
+                  textAlign: "center",
+                  lineHeight: isSmallMobile ? 18 : 20,
+                }}
+              >
+                {feature.description}
+              </Text>
+            </View>
           ))}
         </View>
       </View>
