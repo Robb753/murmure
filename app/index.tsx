@@ -14,7 +14,7 @@ import { mainPageStyles } from "@/styles";
 import BurgerMenu from "@/components/BurgerMenu";
 import { landingStyles } from "@/styles/mainPage.styles";
 
-// Types pour les props des composants
+// Types
 interface FeatureCardProps {
   icon: string;
   title: string;
@@ -30,7 +30,7 @@ interface FAQItemProps {
   onToggle: () => void;
 }
 
-// ---------- FeatureCard ----------
+// Components
 const FeatureCard = memo<FeatureCardProps>(
   ({ icon, title, description, currentTheme }) => (
     <View
@@ -60,7 +60,6 @@ const FeatureCard = memo<FeatureCardProps>(
 );
 FeatureCard.displayName = "FeatureCard";
 
-// ---------- FAQItem ----------
 const FAQItem = memo<FAQItemProps>(
   ({ question, answer, currentTheme, isOpen, onToggle }) => (
     <View style={[landingStyles.faqItem, { borderColor: currentTheme.border }]}>
@@ -100,10 +99,16 @@ const FAQItem = memo<FAQItemProps>(
 );
 FAQItem.displayName = "FAQItem";
 
-// ---------- Page ----------
+// Main Component
 const MurmureLanding = memo(() => {
   const router = useRouter();
   const { width } = Dimensions.get("window");
+  const [openFAQ, setOpenFAQ] = useState<string | null>(null);
+
+  // Responsive breakpoints
+  const isMobile = width < 768;
+  const isSmallMobile = width < 400;
+  const isVerySmallMobile = width < 360;
   const logoSize = width > 768 ? 100 : width > 400 ? 80 : 60;
 
   const { currentTheme, changeTheme } = useAdvancedTheme({
@@ -112,12 +117,26 @@ const MurmureLanding = memo(() => {
     persistPreferences: false,
   });
 
-  const [openFAQ, setOpenFAQ] = useState<string | null>(null);
-
+  // Effects
   useEffect(() => {
     changeTheme("papyrus");
   }, [changeTheme]);
 
+  useEffect(() => {
+    if (Platform.OS === "web") {
+      const viewport = document.querySelector('meta[name="viewport"]');
+      if (!viewport) {
+        const meta = document.createElement("meta");
+        meta.name = "viewport";
+        meta.content =
+          "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover";
+        document.head.appendChild(meta);
+      }
+      document.body.style.overflowX = "hidden";
+    }
+  }, []);
+
+  // Handlers
   const handleWebAppClick = useCallback(() => {
     router.push("/app");
   }, [router]);
@@ -135,37 +154,59 @@ const MurmureLanding = memo(() => {
     (faqId: string) => setOpenFAQ((prev) => (prev === faqId ? null : faqId)),
     []
   );
-  const toggleSecurity = useCallback(() => toggleFAQ("security"), [toggleFAQ]);
-  const toggleFree = useCallback(() => toggleFAQ("free"), [toggleFAQ]);
-  const toggleExport = useCallback(() => toggleFAQ("export"), [toggleFAQ]);
 
-  // ===== MÉMORISATION DES OBJETS COMPLEXES =====
-  const phoneTransform = useMemo(() => [{ rotate: "3deg" }], []);
-
-  const headerBackgroundStyle = useMemo(
+  // Memoized data
+  const responsiveOverrides = useMemo(
     () => ({
-      backgroundColor: `${currentTheme.surface}cc`,
-      borderBottomColor: currentTheme.border,
+      hero: {
+        paddingHorizontal: isVerySmallMobile ? 12 : isSmallMobile ? 16 : 20,
+        paddingVertical: isMobile ? 40 : 80,
+      },
+      heroMainTitle: {
+        fontSize: isVerySmallMobile
+          ? 26
+          : isSmallMobile
+          ? 30
+          : isMobile
+          ? 32
+          : 48,
+        paddingHorizontal: isVerySmallMobile ? 4 : 8,
+      },
+      heroSubTitle: {
+        fontSize: isVerySmallMobile
+          ? 20
+          : isSmallMobile
+          ? 24
+          : isMobile
+          ? 28
+          : 40,
+        paddingHorizontal: isVerySmallMobile ? 4 : 8,
+      },
+      heroDescription: {
+        fontSize: isVerySmallMobile
+          ? 16
+          : isSmallMobile
+          ? 17
+          : isMobile
+          ? 18
+          : 20,
+        paddingHorizontal: isVerySmallMobile ? 8 : 12,
+        maxWidth: isSmallMobile ? width - 32 : 600,
+      },
+      phoneMockup: {
+        maxWidth: isVerySmallMobile ? 220 : isSmallMobile ? 250 : 300,
+        transform: [{ rotate: isMobile ? "1deg" : "3deg" }],
+      },
+      featureGrid: {
+        flexDirection: (isMobile ? "column" : "row") as "column" | "row",
+        paddingHorizontal: isVerySmallMobile ? 8 : 16,
+      },
+      featureCard: {
+        width: isMobile ? Math.min(width - 32, 320) : 280,
+        padding: isSmallMobile ? 20 : 32,
+      },
     }),
-    [currentTheme.surface, currentTheme.border]
-  );
-
-  const dynamicBackgrounds = useMemo(
-    () => ({
-      hero: { backgroundColor: currentTheme.background },
-      why: { backgroundColor: `${currentTheme.accent}08` },
-      features: { backgroundColor: currentTheme.surface },
-      faq: { backgroundColor: currentTheme.background },
-    }),
-    [currentTheme.background, currentTheme.accent, currentTheme.surface]
-  );
-
-  const footerDynamicStyles = useMemo(
-    () => ({
-      iconColor: { color: currentTheme.accent },
-      buttonBackground: { backgroundColor: currentTheme.accent },
-    }),
-    [currentTheme.accent]
+    [width, isMobile, isSmallMobile, isVerySmallMobile]
   );
 
   const featuresData = useMemo(
@@ -206,7 +247,7 @@ const MurmureLanding = memo(() => {
         answer:
           "Oui, absolument ! Tous tes textes sont enregistrés localement sur ton appareil. Aucune donnée n'est transmise à nos serveurs ou à des tiers. Tu gardes le contrôle total de tes écrits.",
         isOpen: openFAQ === "security",
-        onToggle: toggleSecurity,
+        onToggle: () => toggleFAQ("security"),
       },
       {
         id: "free",
@@ -214,7 +255,7 @@ const MurmureLanding = memo(() => {
         answer:
           "Oui, Murmure est 100% gratuite ! Nous croyons que l'écriture introspective devrait être accessible à tous, sans barrière financière.",
         isOpen: openFAQ === "free",
-        onToggle: toggleFree,
+        onToggle: () => toggleFAQ("free"),
       },
       {
         id: "export",
@@ -222,21 +263,28 @@ const MurmureLanding = memo(() => {
         answer:
           "Oui, en un clic ! Tu peux exporter tes textes au format TXT ou PDF à tout moment. Tes écrits t'appartiennent et tu peux les récupérer quand tu veux.",
         isOpen: openFAQ === "export",
-        onToggle: toggleExport,
+        onToggle: () => toggleFAQ("export"),
       },
     ],
-    [openFAQ, toggleSecurity, toggleFree, toggleExport]
+    [openFAQ, toggleFAQ]
   );
 
   return (
     <ScrollView
-      style={[landingStyles.container, dynamicBackgrounds.hero]}
-      removeClippedSubviews
+      style={[
+        landingStyles.container,
+        { backgroundColor: currentTheme.background },
+      ]}
       showsVerticalScrollIndicator
       bounces
     >
       {/* Header */}
-      <View style={[landingStyles.header, headerBackgroundStyle]}>
+      <View
+        style={[
+          landingStyles.header,
+          { borderBottomColor: currentTheme.border },
+        ]}
+      >
         <View style={landingStyles.headerContent}>
           <View style={landingStyles.logo}>
             <Image
@@ -249,7 +297,6 @@ const MurmureLanding = memo(() => {
               accessibilityLabel="Logo de Murmure"
             />
           </View>
-
           <BurgerMenu
             currentTheme={currentTheme}
             router={router}
@@ -258,54 +305,98 @@ const MurmureLanding = memo(() => {
         </View>
       </View>
 
-      {/* Hero */}
-      <View style={landingStyles.hero}>
+      {/* Hero Section */}
+      <View
+        style={[
+          landingStyles.hero,
+          responsiveOverrides.hero,
+          { backgroundColor: currentTheme.background },
+        ]}
+      >
+        {/* Background Elements */}
         <View
-          style={landingStyles.backgroundElement1}
+          style={[
+            landingStyles.backgroundElement1,
+            {
+              width: isMobile ? 64 : 128,
+              height: isMobile ? 64 : 128,
+              borderRadius: isMobile ? 32 : 64,
+            },
+          ]}
           accessibilityElementsHidden
         />
         <View
-          style={landingStyles.backgroundElement2}
+          style={[
+            landingStyles.backgroundElement2,
+            {
+              width: isMobile ? 80 : 160,
+              height: isMobile ? 80 : 160,
+              borderRadius: isMobile ? 40 : 80,
+            },
+          ]}
           accessibilityElementsHidden
         />
 
         <View style={landingStyles.heroContent}>
+          {/* Titles */}
           <View style={landingStyles.heroTitleContainer}>
             <Text
-              style={landingStyles.heroMainTitle}
+              style={[
+                landingStyles.heroMainTitle,
+                responsiveOverrides.heroMainTitle,
+                { color: currentTheme.text },
+              ]}
               accessibilityRole="header"
             >
               Écris librement.
             </Text>
-            <Text style={landingStyles.heroSubTitle} accessibilityRole="header">
+            <Text
+              style={[
+                landingStyles.heroSubTitle,
+                responsiveOverrides.heroSubTitle,
+                { color: currentTheme.text },
+              ]}
+              accessibilityRole="header"
+            >
               Murmure ce que tu n&apos;oses dire.
             </Text>
           </View>
 
-          <Text style={landingStyles.heroDescription}>
+          {/* Description */}
+          <Text
+            style={[
+              landingStyles.heroDescription,
+              responsiveOverrides.heroDescription,
+              { color: currentTheme.textSecondary },
+            ]}
+          >
             Un refuge numérique pour tes pensées les plus intimes.{"\n"}
             Écris sans filtre, sans jugement, juste toi et tes mots.
           </Text>
 
           {/* Phone Mockup */}
-          <View
-            style={landingStyles.phoneMockupContainer}
-            accessibilityRole="image"
-            accessibilityLabel="Aperçu de l'interface de l'application Murmure sur mobile"
-          >
+          <View style={landingStyles.phoneMockupContainer}>
             <View
-              style={[landingStyles.phoneMockup, { transform: phoneTransform }]}
+              style={[
+                landingStyles.phoneMockup,
+                responsiveOverrides.phoneMockup,
+              ]}
             >
               <View style={landingStyles.phoneGradient}>
                 <View style={landingStyles.phoneScreen}>
                   <View style={landingStyles.phoneHeader}>
                     <View style={landingStyles.phoneAppInfo}>
-                      <Text
-                        style={landingStyles.phoneMoonIcon}
-                        accessibilityElementsHidden
-                      >
-                        🌙
-                      </Text>
+                      {/* REMPLACÉ: Emoji par votre logo */}
+                      <Image
+                        source={require("@/assets/images/logo-murmure.png")}
+                        style={{
+                          width: 20,
+                          height: 20,
+                          borderRadius: 4,
+                        }}
+                        accessible
+                        accessibilityLabel="Logo Murmure"
+                      />
                       <Text style={landingStyles.phoneAppName}>Murmure</Text>
                     </View>
                     <Text style={landingStyles.phoneTime}>15:42</Text>
@@ -352,10 +443,16 @@ const MurmureLanding = memo(() => {
             </View>
           </View>
 
-          {/* CTA */}
+          {/* CTA Buttons */}
           <View style={landingStyles.ctaContainer}>
             <TouchableOpacity
-              style={landingStyles.ctaPrimaryGreen}
+              style={[
+                landingStyles.ctaPrimaryGreen,
+                {
+                  minWidth: isSmallMobile ? 250 : 280,
+                  maxWidth: isSmallMobile ? width - 64 : 320,
+                },
+              ]}
               onPress={handleWebAppClick}
               accessible
               accessibilityRole="button"
@@ -367,7 +464,13 @@ const MurmureLanding = memo(() => {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={landingStyles.ctaSecondaryOutline}
+              style={[
+                landingStyles.ctaSecondaryOutline,
+                {
+                  minWidth: isSmallMobile ? 250 : 280,
+                  maxWidth: isSmallMobile ? width - 64 : 320,
+                },
+              ]}
               onPress={handleDownloadClick}
               accessible
               accessibilityRole="button"
@@ -379,29 +482,43 @@ const MurmureLanding = memo(() => {
             </TouchableOpacity>
           </View>
 
-          {/* Trust */}
+          {/* Trust Indicators */}
           <View style={landingStyles.trustIndicators}>
             <View style={landingStyles.trustItem}>
-              <Text style={landingStyles.trustIcon} accessibilityElementsHidden>
-                ❤️
+              <Text style={landingStyles.trustIcon}>❤️</Text>
+              <Text
+                style={[
+                  landingStyles.trustText,
+                  { color: currentTheme.textSecondary },
+                ]}
+              >
+                Gratuit
               </Text>
-              <Text style={landingStyles.trustText}>Gratuit</Text>
             </View>
             <View style={landingStyles.trustItem}>
-              <Text style={landingStyles.trustIcon} accessibilityElementsHidden>
-                🛡️
+              <Text style={landingStyles.trustIcon}>🛡️</Text>
+              <Text
+                style={[
+                  landingStyles.trustText,
+                  { color: currentTheme.textSecondary },
+                ]}
+              >
+                100% privé
               </Text>
-              <Text style={landingStyles.trustText}>100% privé</Text>
             </View>
           </View>
         </View>
       </View>
 
-      {/* Why */}
-      <View style={[landingStyles.whySection, dynamicBackgrounds.why]}>
+      {/* Why Section */}
+      <View
+        style={[
+          landingStyles.whySection,
+          { backgroundColor: `${currentTheme.accent}08` },
+        ]}
+      >
         <Text
           style={[landingStyles.sectionTitle, { color: currentTheme.text }]}
-          accessibilityRole="header"
         >
           Pourquoi Murmure ?
         </Text>
@@ -410,26 +527,35 @@ const MurmureLanding = memo(() => {
         >
           Nous avons tous des choses à écrire, mais parfois, trop d&apos;outils
           tuent la plume. Murmure est né du besoin d&apos;un endroit calme, sans
-          bruit, sans jugement, pour simplement… écrire. Un retour à
-          l&apos;essentiel de l&apos;écriture introspective, où seuls comptent
-          tes mots et tes pensées.
+          bruit, sans jugement, pour simplement… écrire.
         </Text>
       </View>
 
       {/* Features */}
       <View
-        style={[landingStyles.features, dynamicBackgrounds.features]}
-        accessible
-        accessibilityLabel="Fonctionnalités de Murmure"
+        style={[
+          landingStyles.features,
+          {
+            backgroundColor: currentTheme.surface,
+            paddingHorizontal: isVerySmallMobile ? 12 : 16,
+          },
+        ]}
       >
         <Text
-          style={[landingStyles.sectionTitle, { color: currentTheme.text }]}
-          accessibilityRole="header"
+          style={[
+            landingStyles.sectionTitle,
+            {
+              color: currentTheme.text,
+              fontSize: isSmallMobile ? 28 : 36,
+            },
+          ]}
         >
           Fonctionnalités
         </Text>
 
-        <View style={landingStyles.featureGrid}>
+        <View
+          style={[landingStyles.featureGrid, responsiveOverrides.featureGrid]}
+        >
           {featuresData.map((feature, index) => (
             <FeatureCard
               key={`feature-${index}`}
@@ -444,7 +570,10 @@ const MurmureLanding = memo(() => {
 
       {/* FAQ */}
       <View
-        style={[landingStyles.faqSection, dynamicBackgrounds.faq]}
+        style={[
+          landingStyles.faqSection,
+          { backgroundColor: currentTheme.background },
+        ]}
         accessible
         accessibilityLabel="Questions fréquemment posées"
       >
@@ -470,113 +599,304 @@ const MurmureLanding = memo(() => {
       </View>
 
       {/* Footer */}
-      <View style={landingStyles.footer}>
+      <View style={[landingStyles.footer, { backgroundColor: "#0f172a" }]}>
         <View style={landingStyles.footerContent}>
-          <View style={landingStyles.footerGrid}>
-            {/* Col 1 */}
-            <View style={landingStyles.footerColumn}>
-              <View style={landingStyles.footerLogo}>
-                <Text
-                  style={[
-                    landingStyles.footerLogoIcon,
-                    footerDynamicStyles.iconColor,
-                  ]}
-                  accessibilityElementsHidden
-                >
-                  🌙
-                </Text>
+          <View
+            style={[
+              landingStyles.footerGrid,
+              {
+                flexDirection: isMobile ? "column" : "row",
+                gap: isMobile ? 32 : 0,
+                alignItems: isMobile ? "flex-start" : "stretch",
+              },
+            ]}
+          >
+            {/* Column 1 - Logo and description */}
+            <View
+              style={[
+                landingStyles.footerColumn,
+                {
+                  flex: isMobile ? 0 : 1,
+                  marginRight: isMobile ? 0 : 32,
+                  maxWidth: isMobile ? "100%" : 300,
+                },
+              ]}
+            >
+              <View
+                style={[landingStyles.footerLogo, { alignItems: "center" }]}
+              >
+                <Image
+                  source={require("@/assets/images/logo-murmure.png")}
+                  style={{
+                    width: 28,
+                    height: 28,
+                    marginRight: 12,
+                    borderRadius: 6,
+                  }}
+                  accessible
+                  accessibilityLabel="Logo Murmure"
+                />
                 <Text style={landingStyles.footerLogoText}>Murmure</Text>
               </View>
-              <Text style={landingStyles.footerDescription}>
+              <Text
+                style={[
+                  landingStyles.footerDescription,
+                  {
+                    lineHeight: 24,
+                    marginBottom: isMobile ? 8 : 16,
+                    marginTop: 8,
+                  },
+                ]}
+              >
                 L&apos;espace minimaliste pour ton écriture introspective.
+              </Text>
+              <Text
+                style={[
+                  landingStyles.footerDescription,
+                  {
+                    fontSize: 14,
+                    fontStyle: "italic",
+                    opacity: 0.8,
+                    color: "#9ca3af",
+                    lineHeight: 20,
+                  },
+                ]}
+              >
+                Écris sans filtre, murmure tes pensées.
               </Text>
             </View>
 
-            {/* Col 2 */}
-            <View style={landingStyles.footerColumn}>
-              <Text style={landingStyles.footerColumnTitle}>Liens utiles</Text>
-              <TouchableOpacity
-                style={landingStyles.footerLink}
-                accessible
-                accessibilityRole="link"
-                accessibilityLabel="En savoir plus sur Murmure"
-                onPress={() => router.push("/about")}
+            {/* Column 2 - Useful links */}
+            <View
+              style={[
+                landingStyles.footerColumn,
+                {
+                  flex: isMobile ? 0 : 1,
+                  marginRight: isMobile ? 0 : 32,
+                  minWidth: isMobile ? "100%" : 160,
+                },
+              ]}
+            >
+              <Text
+                style={[landingStyles.footerColumnTitle, { marginBottom: 16 }]}
               >
-                <Text style={landingStyles.footerLinkText}>À propos</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={landingStyles.footerLink}
-                accessible
-                accessibilityRole="link"
-                accessibilityLabel="Politique de confidentialité"
-                onPress={() => router.push("/privacy")}
-              >
-                <Text style={landingStyles.footerLinkText}>
-                  Confidentialité
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={landingStyles.footerLink}
-                accessible
-                accessibilityRole="link"
-                accessibilityLabel="Nous contacter"
-                onPress={() => router.push("/support")}
-              >
-                <Text style={landingStyles.footerLinkText}>
-                  Contact et Soutenir
-                </Text>
-              </TouchableOpacity>
+                Liens utiles
+              </Text>
+
+              {[
+                { text: "À propos", route: "/about" },
+                { text: "Confidentialité", route: "/privacy" },
+                { text: "Contact et Support", route: "/support" },
+              ].map((link, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={[
+                    landingStyles.footerLink,
+                    {
+                      paddingVertical: 6,
+                      borderRadius: 4,
+                      paddingHorizontal: 8,
+                      marginHorizontal: -8,
+                      marginBottom: 8,
+                    },
+                  ]}
+                  onPress={() => router.push(link.route)}
+                  accessible
+                  accessibilityRole="link"
+                >
+                  <Text
+                    style={[
+                      landingStyles.footerLinkText,
+                      {
+                        fontSize: 15,
+                        color: "#cbd5e1",
+                      },
+                    ]}
+                  >
+                    {link.text}
+                  </Text>
+                </TouchableOpacity>
+              ))}
             </View>
 
-            {/* Col 3 */}
-            <View style={landingStyles.footerColumn}>
-              <Text style={landingStyles.footerColumnTitle}>Télécharger</Text>
+            {/* Column 3 - Download */}
+            <View
+              style={[
+                landingStyles.footerColumn,
+                {
+                  flex: isMobile ? 0 : 1,
+                  marginRight: isMobile ? 0 : 32,
+                  minWidth: isMobile ? "100%" : 200,
+                },
+              ]}
+            >
+              <Text
+                style={[landingStyles.footerColumnTitle, { marginBottom: 16 }]}
+              >
+                Télécharger
+              </Text>
+
               <TouchableOpacity
                 style={[
                   landingStyles.footerButton,
-                  footerDynamicStyles.buttonBackground,
+                  {
+                    backgroundColor: currentTheme.accent,
+                    paddingHorizontal: 20,
+                    paddingVertical: 12,
+                    borderRadius: 12,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    minWidth: isMobile ? 200 : 180,
+                    maxWidth: isMobile ? 250 : 200,
+                    shadowColor: currentTheme.accent,
+                    shadowOffset: { width: 0, height: 3 },
+                    shadowOpacity: 0.3,
+                    shadowRadius: 6,
+                    elevation: 6,
+                  },
                 ]}
                 onPress={handleDownloadClick}
                 accessible
                 accessibilityRole="button"
-                accessibilityLabel="Télécharger Murmure sur Google Play"
               >
-                <Text style={landingStyles.footerButtonText}>
+                <Text
+                  style={[
+                    landingStyles.footerButtonText,
+                    {
+                      fontSize: 15,
+                      fontWeight: "600",
+                    },
+                  ]}
+                >
                   📲 Google Play
                 </Text>
               </TouchableOpacity>
+
+              <Text
+                style={[
+                  landingStyles.footerDescription,
+                  {
+                    fontSize: 12,
+                    marginTop: 8,
+                    opacity: 0.7,
+                  },
+                ]}
+              >
+                App Store bientôt disponible
+              </Text>
             </View>
 
-            {/* Col 4 */}
-            <View style={landingStyles.footerColumn}>
-              <Text style={landingStyles.footerColumnTitle}>Suivez-nous</Text>
-              <View style={landingStyles.socialLinks}>
-                <TouchableOpacity
-                  style={landingStyles.footerLink}
-                  accessible
-                  accessibilityRole="link"
-                  accessibilityLabel="Suivre Murmure sur Twitter"
-                  onPress={() => {
-                    if (Platform.OS === "web")
-                      window.open("https://twitter.com/MurmureApp", "_blank");
-                  }}
-                >
-                  <Text style={landingStyles.footerLinkText}>Twitter</Text>
-                </TouchableOpacity>
+            {/* Column 4 - Social */}
+            <View
+              style={[
+                landingStyles.footerColumn,
+                {
+                  flex: isMobile ? 0 : 1,
+                  minWidth: isMobile ? "100%" : 160,
+                },
+              ]}
+            >
+              <Text
+                style={[landingStyles.footerColumnTitle, { marginBottom: 18 }]}
+              >
+                Suivez-nous
+              </Text>
+
+              <View style={{ gap: 8 }}>
+                {[
+                  {
+                    icon: "🐦",
+                    text: "Twitter",
+                    url: "https://twitter.com/MurmureApp",
+                  },
+                ].map((social, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    style={[
+                      landingStyles.footerLink,
+                      {
+                        paddingVertical: 6,
+                        borderRadius: 4,
+                        paddingHorizontal: 8,
+                        marginHorizontal: -8,
+                        flexDirection: "row",
+                        alignItems: "center",
+                      },
+                    ]}
+                    onPress={() => {
+                      if (Platform.OS === "web") {
+                        window.open(social.url, "_blank");
+                      }
+                    }}
+                    accessible
+                    accessibilityRole="link"
+                  >
+                    <Text style={{ fontSize: 16, marginRight: 8 }}>
+                      {social.icon}
+                    </Text>
+                    <Text
+                      style={[
+                        landingStyles.footerLinkText,
+                        {
+                          fontSize: 12,
+                          color: "#cbd5e1",
+                        },
+                      ]}
+                    >
+                      {social.text}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
               </View>
             </View>
           </View>
         </View>
 
-        <View style={landingStyles.footerBottom}>
-          <Text style={landingStyles.footerCopyright}>
+        {/* Footer bottom */}
+        <View
+          style={[
+            landingStyles.footerBottom,
+            {
+              paddingTop: isMobile ? 24 : 32,
+              borderTopColor: "#1e293b",
+              marginTop: 24,
+              flexDirection: isMobile ? "column" : "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: isMobile ? 12 : 0,
+            },
+          ]}
+        >
+          <Text
+            style={[
+              landingStyles.footerCopyright,
+              {
+                textAlign: isMobile ? "center" : "left",
+                flex: isMobile ? 0 : 1,
+              },
+            ]}
+          >
             © 2025 Murmure. Tous droits réservés.
+          </Text>
+
+          <Text
+            style={[
+              landingStyles.footerCopyright,
+              {
+                textAlign: isMobile ? "center" : "right",
+                fontSize: 12,
+                opacity: 0.6,
+              },
+            ]}
+          >
+            Version 1.0.0 • Fait avec ❤️
           </Text>
         </View>
       </View>
     </ScrollView>
   );
 });
-MurmureLanding.displayName = "MurmureLanding";
 
+MurmureLanding.displayName = "MurmureLanding";
 export default MurmureLanding;

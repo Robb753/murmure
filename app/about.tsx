@@ -328,7 +328,7 @@ const AboutPage = memo(() => {
               accessibilityRole="button"
               accessibilityLabel="Commencer à utiliser Murmure maintenant"
             >
-              <Text style={styles.ctaText}>Essayer Murmure maintenant</Text>
+              <Text style={styles.ctaText}>Essayer maintenant</Text>
             </TouchableOpacity>
 
             <TouchableOpacity

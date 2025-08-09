@@ -402,8 +402,11 @@ export const landingStyles = StyleSheet.create({
 
   // CTA Buttons
   ctaContainer: {
-    flexDirection: Platform.OS === "web" ? "row" : "column",
+    flexDirection: "column", // ✅ CHANGÉ: Toujours en colonne
     alignItems: "center",
+    gap: 16, // ✅ AJOUTÉ: Espace entre les boutons
+    width: "100%", // ✅ AJOUTÉ: Largeur complète
+    paddingHorizontal: 16, // ✅ AJOUTÉ: Padding horizontal
   },
 
   ctaPrimaryGreen: {
@@ -412,9 +415,11 @@ export const landingStyles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 25,
     minWidth: 280,
+    maxWidth: 320, // ✅ AJOUTÉ: Largeur max
+    width: "100%", // ✅ AJOUTÉ: Largeur responsive
     alignItems: "center",
-    marginBottom: Platform.OS === "web" ? 0 : 16,
-    marginRight: Platform.OS === "web" ? 16 : 0,
+    marginBottom: 0, // ✅ CHANGÉ: Pas de margin bottom
+    marginRight: 0, // ✅ CHANGÉ: Pas de margin right
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 12,
@@ -665,20 +670,69 @@ export const landingStyles = StyleSheet.create({
   },
 
   footerLink: {
-    marginBottom: 12,
+    marginBottom: 8, // ✅ CHANGÉ: Réduit l'espace
+    // ✅ AJOUTÉ: Hover effects pour web
+    ...(Platform.OS === "web" &&
+      ({
+        transition: "all 0.2s ease",
+        ":hover": {
+          backgroundColor: "rgba(255, 255, 255, 0.1)",
+          transform: "translateX(4px)",
+        },
+      } as any)),
   },
 
   footerLinkText: {
     color: "#94a3b8",
-    fontSize: 16,
+    fontSize: 15, // ✅ CHANGÉ: Légèrement plus grand
+    fontWeight: "400", // ✅ AJOUTÉ: Poids de police
+    // ✅ AJOUTÉ: Hover pour web
+    ...(Platform.OS === "web" &&
+      ({
+        transition: "color 0.2s ease",
+        ":hover": {
+          color: "#cbd5e1",
+        },
+      } as any)),
   },
 
   footerButton: {
     paddingHorizontal: 20,
     paddingVertical: 12,
-    borderRadius: 8,
+    borderRadius: 12, // ✅ CHANGÉ: Plus arrondi
     alignItems: "center",
-    maxWidth: 200,
+    maxWidth: 220, // ✅ CHANGÉ: Largeur ajustée
+    minWidth: 180, // ✅ AJOUTÉ: Largeur minimum
+    // ✅ AJOUTÉ: Shadow améliorée
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+    // ✅ AJOUTÉ: Hover effects
+    ...(Platform.OS === "web" &&
+      ({
+        transition: "all 0.3s ease",
+        ":hover": {
+          transform: "translateY(-2px)",
+          shadowOpacity: 0.4,
+          shadowRadius: 12,
+        },
+      } as any)),
+  },
+
+  footerSocialIcon: {
+    fontSize: 16,
+    marginRight: 8,
+    opacity: 0.8,
+  },
+  
+  footerBadge: {
+    fontSize: 11,
+    color: "#64748b",
+    fontStyle: "italic",
+    marginTop: 6,
+    opacity: 0.7,
   },
 
   footerButtonText: {
