@@ -302,11 +302,6 @@ const SupportAndContact = memo(() => {
         answer:
           "Envoie-moi un email avec : ton type d'appareil, la version de l'app, et décris ce qui ne fonctionne pas. Captures d'écran bienvenues !",
       },
-      {
-        question: "Murmure va-t-elle rester gratuite ?",
-        answer:
-          "Oui, à 100% ! C'est un engagement ferme. Les dons sont uniquement pour soutenir le développement, jamais obligatoires.",
-      },
     ],
     []
   );
@@ -317,7 +312,7 @@ const SupportAndContact = memo(() => {
     <ScrollView
       style={[styles.container, dynamicStyles.container]}
       removeClippedSubviews={true}
-      showsVerticalScrollIndicator={false}
+      showsVerticalScrollIndicator={true}
       bounces={true}
     >
       {/* Header avec navigation */}

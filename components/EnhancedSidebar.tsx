@@ -1,11 +1,11 @@
+// components/EnhancedSidebar.tsx - CORRECTION COMPLÈTE
+
 import React, { useState } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
   FlatList,
-  Alert,
-  Platform,
   Modal,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -25,118 +25,48 @@ interface EnhancedSidebarProps {
   onExportEntry: (entry: MurmureEntry) => void;
 }
 
-// ✅ Composant SimpleEntry avec gestion d'erreurs corrigée
-const SimpleEntry = ({
-  item,
+// ✅ NOUVEAU: Modal centrée séparée pour les actions
+const CenteredActionModal = ({
+  visible,
+  entry,
   currentTheme,
-  currentEntry,
-  onLoadEntry,
-  onExportEntry,
+  isTrash,
+  onClose,
+  onExport,
   onMoveToTrash,
-  onRestoreFromTrash,
-  onDeletePermanently,
-  isTrash = false,
-  showMenu,
-  setShowMenu,
-  onMenuOpen,
+  onRestore,
+  onDelete,
   onShowConfirmation,
 }: {
-  item: MurmureEntry;
+  visible: boolean;
+  entry: MurmureEntry | null;
   currentTheme: any;
-  currentEntry: MurmureEntry | null;
-  onLoadEntry: (entry: MurmureEntry) => void;
-  onExportEntry: (entry: MurmureEntry) => void;
+  isTrash: boolean;
+  onClose: () => void;
+  onExport: (entry: MurmureEntry) => void;
   onMoveToTrash: (entry: MurmureEntry) => void;
-  onRestoreFromTrash: (entry: MurmureEntry) => void;
-  onDeletePermanently: (entry: MurmureEntry) => void;
-  isTrash?: boolean;
-  showMenu: boolean;
-  setShowMenu: (show: boolean) => void;
-  onMenuOpen: () => void;
-  onShowConfirmation: (config: {
-    title: string;
-    message: string;
-    confirmText: string;
-    confirmColor?: string;
-    onConfirm: () => void;
-  }) => void;
+  onRestore: (entry: MurmureEntry) => void;
+  onDelete: (entry: MurmureEntry) => void;
+  onShowConfirmation: (config: any) => void;
 }) => {
-  const isActive = currentEntry?.id === item.id;
-  const isEmpty = !item.content || item.content.trim().length === 0;
+  if (!entry) return null;
 
-  // ✅ Format de date simplifié et sécurisé
-  const formatDate = (date: Date | string) => {
-    try {
-      const dateObj = typeof date === "string" ? new Date(date) : date;
-      if (isNaN(dateObj.getTime())) {
-        return "Date invalide";
-      }
-
-      return dateObj.toLocaleDateString("fr-FR", {
-        day: "2-digit",
-        month: "short",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-    } catch (error) {
-      console.warn("Erreur formatage date:", error);
-      return "Date invalide";
-    }
-  };
-
-  // ✅ Gestion sécurisée du nom d'affichage
   const getDisplayName = () => {
-    if (isEmpty) {
+    if (!entry.content || entry.content.trim().length === 0) {
       return "Session vide";
     }
-
-    const preview = item.previewText || item.content?.substring(0, 50) || "";
+    const preview = entry.previewText || entry.content?.substring(0, 50) || "";
     return preview.length > 50 ? preview.substring(0, 50) + "..." : preview;
   };
 
-  const handlePress = () => {
-    if (!isTrash) {
-      console.log("📱 Chargement de l'entrée:", item.id);
-      onLoadEntry(item);
-    }
-  };
-
-  const handleMenuPress = () => {
-    onMenuOpen();
-    setShowMenu(true);
-  };
-
-  const handleLongPress = () => {
-    onMenuOpen();
-    setShowMenu(true);
-  };
-
-  const closeMenu = () => {
-    setShowMenu(false);
-  };
-
-  // ✅ Actions avec gestion d'erreurs robuste
-  const handleExport = async () => {
-    closeMenu();
-    console.log("📤 Export demandé pour:", item.id);
-
-    try {
-      await onExportEntry(item);
-    } catch (error) {
-      console.error("Erreur export:", error);
-      if (Platform.OS === "web") {
-        window.alert("Erreur lors de l'export");
-      } else {
-        Alert.alert("Erreur", "Impossible d'exporter cette entrée");
-      }
-    }
+  const handleExport = () => {
+    onClose();
+    onExport(entry);
   };
 
   const handleDelete = () => {
-    closeMenu();
+    onClose();
     const itemName = getDisplayName();
-
-    console.log("🗑️ Suppression demandée pour:", item.id, "isTrash:", isTrash);
 
     if (isTrash) {
       onShowConfirmation({
@@ -144,19 +74,7 @@ const SimpleEntry = ({
         message: `Supprimer définitivement "${itemName}" ?\n\n⚠️ Cette action est irréversible !`,
         confirmText: "Supprimer définitivement",
         confirmColor: "#ef4444",
-        onConfirm: async () => {
-          console.log("💀 Suppression définitive confirmée pour:", item.id);
-          try {
-            await onDeletePermanently(item);
-          } catch (error) {
-            console.error("Erreur suppression définitive:", error);
-            if (Platform.OS === "web") {
-              window.alert("Erreur lors de la suppression");
-            } else {
-              Alert.alert("Erreur", "Impossible de supprimer cette entrée");
-            }
-          }
-        },
+        onConfirm: () => onDelete(entry),
       });
     } else {
       onShowConfirmation({
@@ -164,319 +82,277 @@ const SimpleEntry = ({
         message: `Déplacer "${itemName}" vers la corbeille ?\n\nSuppression définitive dans 30 jours.`,
         confirmText: "Déplacer",
         confirmColor: "#ef4444",
-        onConfirm: async () => {
-          console.log("🗑️ Déplacement vers corbeille confirmé pour:", item.id);
-          try {
-            await onMoveToTrash(item);
-          } catch (error) {
-            console.error("Erreur déplacement corbeille:", error);
-            if (Platform.OS === "web") {
-              window.alert("Erreur lors du déplacement vers la corbeille");
-            } else {
-              Alert.alert("Erreur", "Impossible de déplacer vers la corbeille");
-            }
-          }
-        },
+        onConfirm: () => onMoveToTrash(entry),
       });
     }
   };
 
   const handleRestore = () => {
-    closeMenu();
+    onClose();
     const itemName = getDisplayName();
-
-    console.log("♻️ Restauration demandée pour:", item.id);
 
     onShowConfirmation({
       title: "Restaurer depuis la corbeille ?",
       message: `Restaurer "${itemName}" depuis la corbeille ?`,
       confirmText: "Restaurer",
       confirmColor: "#10b981",
-      onConfirm: async () => {
-        console.log("♻️ Restauration confirmée pour:", item.id);
-        try {
-          await onRestoreFromTrash(item);
-        } catch (error) {
-          console.error("Erreur restauration:", error);
-          if (Platform.OS === "web") {
-            window.alert("Erreur lors de la restauration");
-          } else {
-            Alert.alert("Erreur", "Impossible de restaurer cette entrée");
-          }
-        }
-      },
+      onConfirm: () => onRestore(entry),
     });
   };
 
   return (
-    <View style={{ position: "relative" }}>
+    <Modal
+      visible={visible}
+      transparent={true}
+      animationType="fade"
+      onRequestClose={onClose}
+      statusBarTranslucent={true}
+      presentationStyle="overFullScreen"
+    >
+      {/* ✅ Overlay avec fermeture en touchant à côté */}
       <View
         style={{
-          flexDirection: "row",
+          flex: 1,
+          backgroundColor: "rgba(0,0,0,0.6)",
+          justifyContent: "center",
           alignItems: "center",
-          padding: 16,
-          marginVertical: 4,
-          marginHorizontal: 8,
-          borderRadius: 12,
-          backgroundColor: isActive
-            ? currentTheme.accent + "20"
-            : currentTheme.surface,
-          borderLeftWidth: 3,
-          borderLeftColor: isActive ? currentTheme.accent : currentTheme.border,
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 1 },
-          shadowOpacity: 0.1,
-          shadowRadius: 2,
-          elevation: 2,
-          // ✅ Opacité réduite pour les entrées dans la corbeille
-          opacity: isTrash ? 0.8 : 1,
+          paddingHorizontal: 20,
         }}
       >
         <TouchableOpacity
-          onPress={handlePress}
-          onLongPress={handleLongPress}
-          style={{ flex: 1 }}
-          activeOpacity={0.7}
-          disabled={isTrash} // ✅ Désactiver le clic pour les entrées dans la corbeille
-        >
-          <Text
-            style={{
-              color: isActive ? currentTheme.accent : currentTheme.text,
-              fontSize: 14,
-              fontWeight: "600",
-              marginBottom: 4,
-            }}
-          >
-            {formatDate(item.createdAt)}
-            {isTrash && " 🗑️"}
-          </Text>
-
-          <Text
-            style={{
-              color: currentTheme.textSecondary,
-              fontSize: 13,
-              marginBottom: 6,
-            }}
-            numberOfLines={2}
-          >
-            {getDisplayName()}
-          </Text>
-
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
-            <Text
-              style={{
-                color: currentTheme.muted,
-                fontSize: 11,
-              }}
-            >
-              {item.wordCount || 0} mot{(item.wordCount || 0) > 1 ? "s" : ""}
-            </Text>
-
-            <Text
-              style={{
-                color: currentTheme.muted,
-                fontSize: 10,
-                fontStyle: "italic",
-              }}
-            >
-              maintenir pour options
-            </Text>
-          </View>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={handleMenuPress}
-          style={{
-            padding: 8,
-            marginLeft: 8,
-            borderRadius: 8,
-            backgroundColor: currentTheme.surface,
-            borderWidth: 1,
-            borderColor: currentTheme.border,
-          }}
-          activeOpacity={0.7}
-        >
-          <Text
-            style={{
-              color: currentTheme.textSecondary,
-              fontSize: 12,
-              lineHeight: 12,
-            }}
-          >
-            ⋯
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* ✅ Menu contextuel amélioré */}
-      {showMenu && (
-        <View
           style={{
             position: "absolute",
             top: 0,
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundColor: "rgba(0,0,0,0.3)",
-            justifyContent: "center",
-            alignItems: "center",
-            zIndex: 50,
+          }}
+          onPress={onClose}
+          activeOpacity={1}
+        />
+
+        {/* ✅ Contenu de la modal - Centré et moderne */}
+        <View
+          style={{
+            backgroundColor: currentTheme.surface,
+            borderRadius: 20,
+            padding: 24,
+            minWidth: 280,
+            maxWidth: 350,
+            width: "90%",
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 12 },
+            shadowOpacity: 0.4,
+            shadowRadius: 24,
+            elevation: 25,
+            borderWidth: 1,
+            borderColor: currentTheme.border,
           }}
         >
-          <TouchableOpacity
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-            }}
-            onPress={closeMenu}
-            activeOpacity={1}
-          />
+          {/* Header avec titre */}
+          <View style={{ marginBottom: 20, alignItems: "center" }}>
+            <View
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: 24,
+                backgroundColor: currentTheme.accent + "20",
+                justifyContent: "center",
+                alignItems: "center",
+                marginBottom: 12,
+              }}
+            >
+              <Text style={{ fontSize: 24 }}>{isTrash ? "🗑️" : "📝"}</Text>
+            </View>
 
-          <View
-            style={{
-              backgroundColor: currentTheme.surface,
-              borderRadius: 16,
-              padding: 20,
-              minWidth: 200,
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 8 },
-              shadowOpacity: 0.25,
-              shadowRadius: 20,
-              elevation: 15,
-              borderWidth: 1,
-              borderColor: currentTheme.border,
-            }}
-          >
             <Text
               style={{
                 color: currentTheme.text,
                 fontSize: 16,
                 fontWeight: "600",
-                marginBottom: 12,
                 textAlign: "center",
+                lineHeight: 22,
               }}
               numberOfLines={2}
             >
               {getDisplayName()}
             </Text>
+          </View>
 
+          {/* Actions */}
+          <View style={{ gap: 12 }}>
             {isTrash ? (
               <>
+                {/* Restaurer */}
                 <TouchableOpacity
                   onPress={handleRestore}
                   style={{
-                    paddingVertical: 12,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    paddingVertical: 14,
                     paddingHorizontal: 16,
-                    borderRadius: 8,
-                    backgroundColor: "#10b98120",
-                    marginBottom: 8,
+                    borderRadius: 12,
+                    backgroundColor: "#10b98115",
+                    borderWidth: 1,
+                    borderColor: "#10b98130",
                   }}
                 >
-                  <Text
-                    style={{
-                      color: "#10b981",
-                      fontSize: 14,
-                      textAlign: "center",
-                      fontWeight: "500",
-                    }}
-                  >
-                    ♻️ Restaurer
-                  </Text>
+                  <Text style={{ fontSize: 20, marginRight: 12 }}>♻️</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={{
+                        color: "#10b981",
+                        fontSize: 16,
+                        fontWeight: "600",
+                      }}
+                    >
+                      Restaurer
+                    </Text>
+                    <Text
+                      style={{
+                        color: currentTheme.textSecondary,
+                        fontSize: 13,
+                        opacity: 0.8,
+                      }}
+                    >
+                      Remettre dans les sessions actives
+                    </Text>
+                  </View>
                 </TouchableOpacity>
 
+                {/* Supprimer définitivement */}
                 <TouchableOpacity
                   onPress={handleDelete}
                   style={{
-                    paddingVertical: 12,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    paddingVertical: 14,
                     paddingHorizontal: 16,
-                    borderRadius: 8,
-                    backgroundColor: "#ef444420",
-                    marginBottom: 8,
+                    borderRadius: 12,
+                    backgroundColor: "#ef444415",
+                    borderWidth: 1,
+                    borderColor: "#ef444430",
                   }}
                 >
-                  <Text
-                    style={{
-                      color: "#ef4444",
-                      fontSize: 14,
-                      textAlign: "center",
-                      fontWeight: "500",
-                    }}
-                  >
-                    💀 Supprimer définitivement
-                  </Text>
+                  <Text style={{ fontSize: 20, marginRight: 12 }}>💀</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={{
+                        color: "#ef4444",
+                        fontSize: 16,
+                        fontWeight: "600",
+                      }}
+                    >
+                      Supprimer définitivement
+                    </Text>
+                    <Text
+                      style={{
+                        color: currentTheme.textSecondary,
+                        fontSize: 13,
+                        opacity: 0.8,
+                      }}
+                    >
+                      Action irréversible
+                    </Text>
+                  </View>
                 </TouchableOpacity>
               </>
             ) : (
               <>
+                {/* Exporter */}
                 <TouchableOpacity
                   onPress={handleExport}
                   style={{
-                    paddingVertical: 12,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    paddingVertical: 14,
                     paddingHorizontal: 16,
-                    borderRadius: 8,
-                    backgroundColor: currentTheme.accent + "20",
-                    marginBottom: 8,
+                    borderRadius: 12,
+                    backgroundColor: currentTheme.accent + "15",
+                    borderWidth: 1,
+                    borderColor: currentTheme.accent + "30",
                   }}
                 >
-                  <Text
-                    style={{
-                      color: currentTheme.accent,
-                      fontSize: 14,
-                      textAlign: "center",
-                      fontWeight: "500",
-                    }}
-                  >
-                    📤 Exporter
-                  </Text>
+                  <Text style={{ fontSize: 20, marginRight: 12 }}>📤</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={{
+                        color: currentTheme.accent,
+                        fontSize: 16,
+                        fontWeight: "600",
+                      }}
+                    >
+                      Exporter
+                    </Text>
+                    <Text
+                      style={{
+                        color: currentTheme.textSecondary,
+                        fontSize: 13,
+                        opacity: 0.8,
+                      }}
+                    >
+                      Sauvegarder ou partager
+                    </Text>
+                  </View>
                 </TouchableOpacity>
 
+                {/* Supprimer */}
                 <TouchableOpacity
                   onPress={handleDelete}
                   style={{
-                    paddingVertical: 12,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    paddingVertical: 14,
                     paddingHorizontal: 16,
-                    borderRadius: 8,
-                    backgroundColor: "#ef444420",
-                    marginBottom: 8,
+                    borderRadius: 12,
+                    backgroundColor: "#ef444415",
+                    borderWidth: 1,
+                    borderColor: "#ef444430",
                   }}
                 >
-                  <Text
-                    style={{
-                      color: "#ef4444",
-                      fontSize: 14,
-                      textAlign: "center",
-                      fontWeight: "500",
-                    }}
-                  >
-                    🗑️ Supprimer
-                  </Text>
+                  <Text style={{ fontSize: 20, marginRight: 12 }}>🗑️</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={{
+                        color: "#ef4444",
+                        fontSize: 16,
+                        fontWeight: "600",
+                      }}
+                    >
+                      Supprimer
+                    </Text>
+                    <Text
+                      style={{
+                        color: currentTheme.textSecondary,
+                        fontSize: 13,
+                        opacity: 0.8,
+                      }}
+                    >
+                      Déplacer vers la corbeille
+                    </Text>
+                  </View>
                 </TouchableOpacity>
               </>
             )}
 
+            {/* Annuler */}
             <TouchableOpacity
-              onPress={closeMenu}
+              onPress={onClose}
               style={{
                 paddingVertical: 12,
                 paddingHorizontal: 16,
-                borderRadius: 8,
-                backgroundColor: currentTheme.muted + "20",
+                borderRadius: 12,
+                backgroundColor: currentTheme.background,
+                borderWidth: 1,
+                borderColor: currentTheme.border,
+                alignItems: "center",
+                marginTop: 8,
               }}
             >
               <Text
                 style={{
-                  color: currentTheme.muted,
-                  fontSize: 14,
-                  textAlign: "center",
+                  color: currentTheme.textSecondary,
+                  fontSize: 16,
                   fontWeight: "500",
                 }}
               >
@@ -484,13 +360,163 @@ const SimpleEntry = ({
               </Text>
             </TouchableOpacity>
           </View>
+
+          {/* Indicateur de fermeture */}
+          <View style={{ marginTop: 16, alignItems: "center" }}>
+            <Text
+              style={{
+                color: currentTheme.muted,
+                fontSize: 12,
+                fontStyle: "italic",
+              }}
+            >
+              Touchez en dehors pour fermer
+            </Text>
+          </View>
         </View>
-      )}
+      </View>
+    </Modal>
+  );
+};
+
+// ✅ Composant SimpleEntry SIMPLIFIÉ - Sans modal interne
+const SimpleEntry = ({
+  item,
+  currentTheme,
+  currentEntry,
+  onLoadEntry,
+  isTrash = false,
+  onMenuPress,
+}: {
+  item: MurmureEntry;
+  currentTheme: any;
+  currentEntry: MurmureEntry | null;
+  onLoadEntry: (entry: MurmureEntry) => void;
+  isTrash?: boolean;
+  onMenuPress: (entry: MurmureEntry) => void;
+}) => {
+  const isActive = currentEntry?.id === item.id;
+  const isEmpty = !item.content || item.content.trim().length === 0;
+
+  const formatDate = (date: Date | string) => {
+    try {
+      const dateObj = typeof date === "string" ? new Date(date) : date;
+      if (isNaN(dateObj.getTime())) return "Date invalide";
+      return dateObj.toLocaleDateString("fr-FR", {
+        day: "2-digit",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch {
+      return "Date invalide";
+    }
+  };
+
+  const getDisplayName = () => {
+    if (isEmpty) return "Session vide";
+    const preview = item.previewText || item.content?.substring(0, 50) || "";
+    return preview.length > 50 ? preview.substring(0, 50) + "..." : preview;
+  };
+
+  const handlePress = () => {
+    if (!isTrash) {
+      onLoadEntry(item);
+    }
+  };
+
+  return (
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        padding: 16,
+        marginVertical: 4,
+        marginHorizontal: 8,
+        borderRadius: 12,
+        backgroundColor: isActive
+          ? currentTheme.accent + "20"
+          : currentTheme.surface,
+        borderLeftWidth: 3,
+        borderLeftColor: isActive ? currentTheme.accent : currentTheme.border,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+        elevation: 2,
+        opacity: isTrash ? 0.8 : 1,
+      }}
+    >
+      <TouchableOpacity
+        onPress={handlePress}
+        style={{ flex: 1 }}
+        activeOpacity={0.7}
+        disabled={isTrash}
+      >
+        <Text
+          style={{
+            color: isActive ? currentTheme.accent : currentTheme.text,
+            fontSize: 14,
+            fontWeight: "600",
+            marginBottom: 4,
+          }}
+        >
+          {formatDate(item.createdAt)}
+          {isTrash && " 🗑️"}
+        </Text>
+
+        <Text
+          style={{
+            color: currentTheme.textSecondary,
+            fontSize: 13,
+            marginBottom: 6,
+          }}
+          numberOfLines={2}
+        >
+          {getDisplayName()}
+        </Text>
+
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <Text style={{ color: currentTheme.muted, fontSize: 11 }}>
+            {item.wordCount || 0} mot{(item.wordCount || 0) > 1 ? "s" : ""}
+          </Text>
+        </View>
+      </TouchableOpacity>
+
+      {/* ✅ Bouton menu simplifié */}
+      <TouchableOpacity
+        onPress={() => onMenuPress(item)}
+        style={{
+          padding: 8,
+          marginLeft: 8,
+          borderRadius: 8,
+          backgroundColor: currentTheme.surface,
+          borderWidth: 1,
+          borderColor: currentTheme.border,
+        }}
+        activeOpacity={0.7}
+      >
+        <Text
+          style={{
+            color: currentTheme.textSecondary,
+            fontSize: 12,
+            lineHeight: 12,
+          }}
+        >
+          ⋯
+        </Text>
+      </TouchableOpacity>
     </View>
   );
 };
 
-// ✅ Composant principal EnhancedSidebar entièrement corrigé
+// ✅ Composant principal EnhancedSidebar SIMPLIFIÉ
 const EnhancedSidebar = ({
   currentTheme,
   currentEntry,
@@ -505,7 +531,12 @@ const EnhancedSidebar = ({
   onExportEntry,
 }: EnhancedSidebarProps) => {
   const [activeTab, setActiveTab] = useState<"sessions" | "trash">("sessions");
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+
+  // ✅ États pour la modal centrée
+  const [selectedEntry, setSelectedEntry] = useState<MurmureEntry | null>(null);
+  const [showCenteredModal, setShowCenteredModal] = useState(false);
+
+  // État pour la confirmation (inchangé)
   const [confirmationState, setConfirmationState] = useState<{
     visible: boolean;
     title: string;
@@ -524,57 +555,41 @@ const EnhancedSidebar = ({
   const insets = useSafeAreaInsets();
   const currentData = activeTab === "sessions" ? entries : trashEntries;
 
-  // ✅ Fonction de confirmation améliorée
-  const showConfirmation = (config: {
-    title: string;
-    message: string;
-    confirmText: string;
-    confirmColor?: string;
-    onConfirm: () => void;
-  }) => {
-    setOpenMenuId(null);
-    setConfirmationState({
-      visible: true,
-      ...config,
-    });
+  // ✅ Nouvelle fonction pour ouvrir la modal centrée
+  const handleMenuPress = (entry: MurmureEntry) => {
+    setSelectedEntry(entry);
+    setShowCenteredModal(true);
+  };
+
+  // ✅ Fonction pour fermer la modal centrée
+  const closeCenteredModal = () => {
+    setShowCenteredModal(false);
+    setSelectedEntry(null);
+  };
+
+  // Fonction de confirmation (inchangé)
+  const showConfirmation = (config: any) => {
+    setConfirmationState({ visible: true, ...config });
   };
 
   const hideConfirmation = () => {
     setConfirmationState((prev) => ({ ...prev, visible: false }));
   };
 
-  // ✅ CORRECTION: Fonction handleConfirm améliorée
   const handleConfirm = async () => {
     try {
       await confirmationState.onConfirm();
     } catch (error) {
       console.error("Erreur lors de l'action:", error);
-      if (Platform.OS === "web") {
-        window.alert("Une erreur s'est produite");
-      } else {
-        Alert.alert("Erreur", "Une erreur s'est produite lors de l'opération");
-      }
     } finally {
       hideConfirmation();
     }
   };
 
-  const handleMenuOpen = (itemId: string) => {
-    setOpenMenuId(itemId);
-  };
-
-  // ✅ Fonction de vidage de corbeille avec gestion d'erreurs
+  // Reste du code inchangé...
   const handleEmptyTrash = () => {
     const count = trashEntries.length;
-
-    if (count === 0) {
-      if (Platform.OS === "web") {
-        window.alert("La corbeille est déjà vide");
-      } else {
-        Alert.alert("Information", "La corbeille est déjà vide");
-      }
-      return;
-    }
+    if (count === 0) return;
 
     showConfirmation({
       title: "Vider la corbeille ?",
@@ -585,35 +600,12 @@ const EnhancedSidebar = ({
       }.\n\n⚠️ Cette action est irréversible !`,
       confirmText: "Vider la corbeille",
       confirmColor: "#ef4444",
-      onConfirm: async () => {
-        console.log("🧹 Vidage corbeille confirmé");
-        try {
-          await onEmptyTrash();
-        } catch (error) {
-          console.error("Erreur vidage corbeille:", error);
-          if (Platform.OS === "web") {
-            window.alert("Erreur lors du vidage de la corbeille");
-          } else {
-            Alert.alert("Erreur", "Impossible de vider la corbeille");
-          }
-        }
-      },
+      onConfirm: onEmptyTrash,
     });
   };
 
-  const handleSidebarPress = () => {
-    if (confirmationState.visible) {
-      hideConfirmation();
-    }
-    setOpenMenuId(null);
-  };
-
-  // ✅ Fonction de rendu d'entrée avec gestion d'erreurs
   const renderEntry = ({ item }: { item: MurmureEntry }) => {
-    if (!item || !item.id) {
-      console.warn("Entrée invalide détectée:", item);
-      return null;
-    }
+    if (!item || !item.id) return null;
 
     return (
       <SimpleEntry
@@ -621,15 +613,8 @@ const EnhancedSidebar = ({
         currentTheme={currentTheme}
         currentEntry={currentEntry}
         onLoadEntry={onLoadEntry}
-        onExportEntry={onExportEntry}
-        onMoveToTrash={onMoveToTrash}
-        onRestoreFromTrash={onRestoreFromTrash}
-        onDeletePermanently={onDeletePermanently}
         isTrash={activeTab === "trash"}
-        showMenu={openMenuId === item.id}
-        setShowMenu={(show) => setOpenMenuId(show ? item.id : null)}
-        onMenuOpen={() => handleMenuOpen(item.id)}
-        onShowConfirmation={showConfirmation}
+        onMenuPress={handleMenuPress}
       />
     );
   };
@@ -652,169 +637,145 @@ const EnhancedSidebar = ({
         elevation: 16,
       }}
     >
-      <TouchableOpacity
-        style={{ flex: 1 }}
-        activeOpacity={1}
-        onPress={handleSidebarPress}
+      {/* Header et contenu inchangés... */}
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: 16,
+          borderBottomWidth: 1,
+          borderBottomColor: currentTheme.border,
+        }}
       >
-        {/* ✅ Header avec compteurs améliorés */}
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          <TouchableOpacity
+            onPress={() => setActiveTab("sessions")}
+            style={{
+              paddingHorizontal: 12,
+              paddingVertical: 6,
+              borderRadius: 8,
+              backgroundColor:
+                activeTab === "sessions"
+                  ? currentTheme.accent + "20"
+                  : "transparent",
+            }}
+          >
+            <Text
+              style={{
+                color:
+                  activeTab === "sessions"
+                    ? currentTheme.accent
+                    : currentTheme.textSecondary,
+                fontSize: 14,
+                fontWeight: activeTab === "sessions" ? "600" : "400",
+              }}
+            >
+              Sessions ({entries.length})
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => setActiveTab("trash")}
+            style={{
+              paddingHorizontal: 12,
+              paddingVertical: 6,
+              borderRadius: 8,
+              backgroundColor:
+                activeTab === "trash"
+                  ? currentTheme.accent + "20"
+                  : "transparent",
+            }}
+          >
+            <Text
+              style={{
+                color:
+                  activeTab === "trash"
+                    ? currentTheme.accent
+                    : currentTheme.textSecondary,
+                fontSize: 14,
+                fontWeight: activeTab === "trash" ? "600" : "400",
+              }}
+            >
+              🗑️ ({trashEntries.length})
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <TouchableOpacity onPress={onClose} style={{ padding: 4 }}>
+          <Text style={{ color: currentTheme.muted, fontSize: 20 }}>×</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Bouton vider corbeille */}
+      {activeTab === "trash" && trashEntries.length > 0 && (
         <View
           style={{
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
             padding: 16,
             borderBottomWidth: 1,
             borderBottomColor: currentTheme.border,
           }}
         >
-          <View style={{ flexDirection: "row", gap: 8 }}>
-            <TouchableOpacity
-              onPress={() => setActiveTab("sessions")}
-              style={{
-                paddingHorizontal: 12,
-                paddingVertical: 6,
-                borderRadius: 8,
-                backgroundColor:
-                  activeTab === "sessions"
-                    ? currentTheme.accent + "20"
-                    : "transparent",
-              }}
-            >
-              <Text
-                style={{
-                  color:
-                    activeTab === "sessions"
-                      ? currentTheme.accent
-                      : currentTheme.textSecondary,
-                  fontSize: 14,
-                  fontWeight: activeTab === "sessions" ? "600" : "400",
-                }}
-              >
-                Sessions ({entries.length})
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => setActiveTab("trash")}
-              style={{
-                paddingHorizontal: 12,
-                paddingVertical: 6,
-                borderRadius: 8,
-                backgroundColor:
-                  activeTab === "trash"
-                    ? currentTheme.accent + "20"
-                    : "transparent",
-              }}
-            >
-              <Text
-                style={{
-                  color:
-                    activeTab === "trash"
-                      ? currentTheme.accent
-                      : currentTheme.textSecondary,
-                  fontSize: 14,
-                  fontWeight: activeTab === "trash" ? "600" : "400",
-                }}
-              >
-                🗑️ ({trashEntries.length})
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          <TouchableOpacity onPress={onClose} style={{ padding: 4 }}>
-            <Text style={{ color: currentTheme.muted, fontSize: 20 }}>×</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* ✅ Bouton de vidage de corbeille amélioré */}
-        {activeTab === "trash" && trashEntries.length > 0 && (
-          <View
+          <TouchableOpacity
+            onPress={handleEmptyTrash}
             style={{
-              padding: 16,
-              borderBottomWidth: 1,
-              borderBottomColor: currentTheme.border,
+              backgroundColor: "#ef4444",
+              paddingVertical: 12,
+              paddingHorizontal: 16,
+              borderRadius: 8,
+              alignItems: "center",
             }}
           >
-            <TouchableOpacity
-              onPress={handleEmptyTrash}
+            <Text style={{ color: "white", fontWeight: "600", fontSize: 14 }}>
+              🗑️ Vider la corbeille ({trashEntries.length})
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Liste des entrées */}
+      <FlatList
+        data={currentData}
+        keyExtractor={(item) => item?.id || Math.random().toString()}
+        renderItem={renderEntry}
+        contentContainerStyle={{ paddingVertical: 8 }}
+        showsVerticalScrollIndicator={true}
+        removeClippedSubviews={true}
+        maxToRenderPerBatch={10}
+        windowSize={10}
+        ListEmptyComponent={
+          <View style={{ padding: 32, alignItems: "center" }}>
+            <Text
               style={{
-                backgroundColor: "#ef4444",
-                paddingVertical: 12,
-                paddingHorizontal: 16,
-                borderRadius: 8,
-                alignItems: "center",
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.1,
-                shadowRadius: 4,
-                elevation: 3,
+                color: currentTheme.muted,
+                textAlign: "center",
+                fontSize: 16,
+                fontStyle: "italic",
               }}
             >
-              <Text
-                style={{
-                  color: "white",
-                  fontWeight: "600",
-                  fontSize: 14,
-                }}
-              >
-                🗑️ Vider la corbeille ({trashEntries.length})
-              </Text>
-            </TouchableOpacity>
+              {activeTab === "sessions"
+                ? "Aucune session d'écriture.\nCommencez par créer votre première session !"
+                : "Corbeille vide.\nLes sessions supprimées apparaîtront ici."}
+            </Text>
           </View>
-        )}
+        }
+      />
 
-        {/* ✅ Liste des entrées avec gestion d'erreurs */}
-        <FlatList
-          data={currentData}
-          keyExtractor={(item) => item?.id || Math.random().toString()}
-          renderItem={renderEntry}
-          contentContainerStyle={{ paddingVertical: 8 }}
-          showsVerticalScrollIndicator={false}
-          removeClippedSubviews={true}
-          maxToRenderPerBatch={10}
-          windowSize={10}
-          ListEmptyComponent={
-            <View style={{ padding: 32, alignItems: "center" }}>
-              <Text
-                style={{
-                  color: currentTheme.muted,
-                  textAlign: "center",
-                  fontSize: 16,
-                  fontStyle: "italic",
-                }}
-              >
-                {activeTab === "sessions"
-                  ? "Aucune session d'écriture.\nCommencez par créer votre première session !"
-                  : "Corbeille vide.\nLes sessions supprimées apparaîtront ici."}
-              </Text>
-            </View>
-          }
-          ListFooterComponent={
-            currentData.length > 0 ? (
-              <View style={{ padding: 16, alignItems: "center" }}>
-                <Text
-                  style={{
-                    color: currentTheme.muted,
-                    fontSize: 12,
-                    textAlign: "center",
-                  }}
-                >
-                  {activeTab === "sessions"
-                    ? `${currentData.length} session${
-                        currentData.length > 1 ? "s" : ""
-                      } • Glissez pour plus d'options`
-                    : `${currentData.length} entrée${
-                        currentData.length > 1 ? "s" : ""
-                      } dans la corbeille`}
-                </Text>
-              </View>
-            ) : null
-          }
-        />
-      </TouchableOpacity>
+      {/* ✅ Modal centrée pour les actions */}
+      <CenteredActionModal
+        visible={showCenteredModal}
+        entry={selectedEntry}
+        currentTheme={currentTheme}
+        isTrash={activeTab === "trash"}
+        onClose={closeCenteredModal}
+        onExport={onExportEntry}
+        onMoveToTrash={onMoveToTrash}
+        onRestore={onRestoreFromTrash}
+        onDelete={onDeletePermanently}
+        onShowConfirmation={showConfirmation}
+      />
 
-      {/* ✅ NOUVELLE MODAL DE CONFIRMATION CORRIGÉE */}
+      {/* Modal de confirmation (inchangée) */}
       {confirmationState.visible && (
         <Modal
           visible={confirmationState.visible}
@@ -834,7 +795,6 @@ const EnhancedSidebar = ({
               paddingVertical: 40,
             }}
           >
-            {/* Zone pour fermer en touchant à côté */}
             <TouchableOpacity
               style={{
                 position: "absolute",
@@ -847,7 +807,6 @@ const EnhancedSidebar = ({
               activeOpacity={1}
             />
 
-            {/* Contenu de la modal */}
             <View
               style={{
                 backgroundColor: currentTheme.surface,
@@ -865,7 +824,6 @@ const EnhancedSidebar = ({
                 borderColor: currentTheme.border,
               }}
             >
-              {/* Icône au centre */}
               <View style={{ alignItems: "center", marginBottom: 16 }}>
                 <View
                   style={{
@@ -882,7 +840,6 @@ const EnhancedSidebar = ({
                 </View>
               </View>
 
-              {/* Titre */}
               <Text
                 style={{
                   color: currentTheme.text,
@@ -896,7 +853,6 @@ const EnhancedSidebar = ({
                 {confirmationState.title}
               </Text>
 
-              {/* Message */}
               <Text
                 style={{
                   color: currentTheme.textSecondary,
@@ -909,9 +865,7 @@ const EnhancedSidebar = ({
                 {confirmationState.message}
               </Text>
 
-              {/* Boutons */}
               <View style={{ flexDirection: "row", gap: 12 }}>
-                {/* Bouton Annuler */}
                 <TouchableOpacity
                   onPress={hideConfirmation}
                   style={{
@@ -939,7 +893,6 @@ const EnhancedSidebar = ({
                   </Text>
                 </TouchableOpacity>
 
-                {/* Bouton Confirmer */}
                 <TouchableOpacity
                   onPress={handleConfirm}
                   style={{
@@ -971,26 +924,6 @@ const EnhancedSidebar = ({
                   </Text>
                 </TouchableOpacity>
               </View>
-
-              {/* ✅ Indicateur de fermeture pour mobile */}
-              {Platform.OS !== "web" && (
-                <View
-                  style={{
-                    marginTop: 16,
-                    alignItems: "center",
-                  }}
-                >
-                  <Text
-                    style={{
-                      color: currentTheme.muted,
-                      fontSize: 12,
-                      fontStyle: "italic",
-                    }}
-                  >
-                    Touchez en dehors pour annuler
-                  </Text>
-                </View>
-              )}
             </View>
           </View>
         </Modal>

@@ -194,7 +194,7 @@ const PrivacyPolicy = memo(() => {
     <ScrollView
       style={[styles.container, dynamicStyles.container]}
       removeClippedSubviews={true}
-      showsVerticalScrollIndicator={false}
+      showsVerticalScrollIndicator={true}
       bounces={true}
     >
       {/* Header avec navigation */}
@@ -359,91 +359,6 @@ const PrivacyPolicy = memo(() => {
               currentTheme={currentTheme}
             />
           ))}
-        </View>
-
-        {/* Section comparaison */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: currentTheme.text }]}>
-            Murmure vs autres apps
-          </Text>
-          <View
-            style={[
-              styles.comparisonCard,
-              { backgroundColor: currentTheme.surface },
-            ]}
-          >
-            <View style={styles.comparisonRow}>
-              <Text
-                style={[
-                  styles.comparisonLabel,
-                  { color: currentTheme.textSecondary },
-                ]}
-              >
-                Collecte de données
-              </Text>
-              <View style={styles.comparisonValue}>
-                <Text
-                  style={[
-                    styles.comparisonMurmure,
-                    { color: currentTheme.accent },
-                  ]}
-                >
-                  Murmure: ❌ Aucune
-                </Text>
-                <Text style={[styles.comparisonOthers, { color: "#ef4444" }]}>
-                  Autres: ✅ Toutes
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.comparisonRow}>
-              <Text
-                style={[
-                  styles.comparisonLabel,
-                  { color: currentTheme.textSecondary },
-                ]}
-              >
-                Création de compte
-              </Text>
-              <View style={styles.comparisonValue}>
-                <Text
-                  style={[
-                    styles.comparisonMurmure,
-                    { color: currentTheme.accent },
-                  ]}
-                >
-                  Murmure: ❌ Pas besoin
-                </Text>
-                <Text style={[styles.comparisonOthers, { color: "#ef4444" }]}>
-                  Autres: ✅ Obligatoire
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.comparisonRow}>
-              <Text
-                style={[
-                  styles.comparisonLabel,
-                  { color: currentTheme.textSecondary },
-                ]}
-              >
-                Publicité
-              </Text>
-              <View style={styles.comparisonValue}>
-                <Text
-                  style={[
-                    styles.comparisonMurmure,
-                    { color: currentTheme.accent },
-                  ]}
-                >
-                  Murmure: ❌ Jamais
-                </Text>
-                <Text style={[styles.comparisonOthers, { color: "#ef4444" }]}>
-                  Autres: ✅ Partout
-                </Text>
-              </View>
-            </View>
-          </View>
         </View>
 
         {/* Section légale */}

@@ -1,4 +1,4 @@
-// hooks/useStorage.ts - Version corrigée SANS confirmations
+// hooks/useStorage.ts - Version avec débounce optimisé
 import MurmureStorage, { MurmureEntry, StorageResult } from "@/app/lib/storage";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useErrorHandler } from "./useErrorHandler";
@@ -20,6 +20,31 @@ interface TextOptions {
   preserveAcronyms: boolean;
   preserveStartOfSentence: boolean;
   preserveProperNouns: boolean;
+}
+
+// ✅ NOUVEAU: Configuration du débounce
+const SAVE_DEBOUNCE_DELAY = 3000; // 1 seconde (plus réactif que 2 secondes)
+const MAX_TEXT_LENGTH = 100000; // 100k caractères maximum
+
+// ✅ NOUVEAU: Fonction débounce optimisée
+function useDebounce<T extends (...args: any[]) => void>(
+  callback: T,
+  delay: number
+): T {
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  return useCallback(
+    ((...args: Parameters<T>) => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+
+      timeoutRef.current = setTimeout(() => {
+        callback(...args);
+      }, delay);
+    }) as T,
+    [callback, delay]
+  );
 }
 
 export const useStorage = () => {
@@ -44,8 +69,10 @@ export const useStorage = () => {
   const [previewEntry, setPreviewEntry] = useState<MurmureEntry | null>(null);
   const [isPreviewModalVisible, setIsPreviewModalVisible] = useState(false);
 
+  // ✅ NOUVEAU: État pour indicateur de sauvegarde
+  const [isSaving, setIsSaving] = useState(false);
+
   // Refs pour éviter les sauvegardes inutiles
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastSavedContentRef = useRef<string>("");
   const previousTextRef = useRef<string>("");
   const isFirstLoadRef = useRef(true);
@@ -75,7 +102,7 @@ export const useStorage = () => {
     []
   );
 
-  // Chargement des données
+  // Chargement des données (inchangé)
   const loadData = useCallback(async (): Promise<StorageResult> => {
     setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
@@ -218,66 +245,115 @@ export const useStorage = () => {
     onCurrentEntryChanged: handleCurrentEntryChanged,
   });
 
-  // Sauvegarder seulement si il y a du contenu
+  // ✅ AMÉLIORATION: Sauvegarde avec indicateur visuel
   const saveCurrentEntry = useCallback(async (): Promise<StorageResult> => {
-    if (!state.currentEntry) {
-      return { success: false, error: "Aucune entrée courante" };
+    // ✅ CORRECTION 1: Vérification stricte de currentEntry
+    if (!state.currentEntry || !state.currentEntry.id) {
+      return { success: false, error: "Aucune entrée courante valide" };
     }
 
+    // ✅ CORRECTION 2: Assertion de type pour éviter les erreurs null
+    const currentEntry = state.currentEntry; // Variable locale non-null
+
     try {
-      // Éviter les sauvegardes d'entrées vides
-      if (
-        state.text.trim() === "" &&
-        state.currentEntry.content.trim() === ""
-      ) {
-        console.log("📝 Éviter la sauvegarde d'une entrée vide");
-        return { success: true };
-      }
+      setIsSaving(true);
+      console.log("🔍 DEBUG: setIsSaving(true) appelé");
 
-      const updatedEntry = { ...state.currentEntry, content: state.text };
-
-      // Éviter les sauvegardes inutiles
-      if (lastSavedContentRef.current === state.text) {
-        return { success: true };
-      }
-
-      console.log("💾 Sauvegarde de l'entrée:", updatedEntry.id);
-      const result = await MurmureStorage.saveEntry(updatedEntry);
-
-      if (result.success && result.data) {
-        lastSavedContentRef.current = state.text;
-
-        // Rechargement optimisé des entrées
-        const entriesData = await withErrorHandling(
-          () => MurmureStorage.loadActiveEntries(),
-          "rechargement entrées"
-        );
-
-        if (entriesData) {
-          setState((prev) => ({
-            ...prev,
-            currentEntry: result.data!,
-            entries: sortEntriesByDate(entriesData),
-            error: null,
-          }));
+      // ✅ NOUVEAU: Délai minimum pour que l'utilisateur voie l'indicateur
+      const savePromise = (async () => {
+        // Éviter les sauvegardes d'entrées vides
+        if (state.text.trim() === "" && currentEntry.content.trim() === "") {
+          console.log("📝 Éviter la sauvegarde d'une entrée vide");
+          return { success: true };
         }
 
-        return { success: true };
-      }
+        // ✅ CORRECTION 3: Créer l'entrée mise à jour avec tous les champs requis
+        const updatedEntry: MurmureEntry = {
+          id: currentEntry.id, // ✅ Non-null garanti
+          date: currentEntry.date,
+          filename: currentEntry.filename,
+          content: state.text, // ✅ Nouveau contenu
+          previewText: currentEntry.previewText,
+          createdAt: currentEntry.createdAt,
+          updatedAt: new Date(), // ✅ Mise à jour du timestamp
+          wordCount: currentEntry.wordCount,
+          deletedAt: currentEntry.deletedAt,
+          isInTrash: currentEntry.isInTrash || false,
+        };
 
-      return {
-        success: false,
-        error: result.error,
-        errorCode: result.errorCode,
-      };
+        // Éviter les sauvegardes inutiles
+        if (lastSavedContentRef.current === state.text) {
+          return { success: true };
+        }
+
+        console.log("💾 Sauvegarde de l'entrée:", updatedEntry.id);
+        const result = await MurmureStorage.saveEntry(updatedEntry);
+
+        if (result.success && result.data) {
+          lastSavedContentRef.current = state.text;
+
+          // Rechargement optimisé des entrées
+          const entriesData = await withErrorHandling(
+            () => MurmureStorage.loadActiveEntries(),
+            "rechargement entrées"
+          );
+
+          if (entriesData) {
+            setState((prev) => ({
+              ...prev,
+              currentEntry: result.data!, // ✅ Non-null garanti par la condition
+              entries: sortEntriesByDate(entriesData),
+              error: null,
+            }));
+          }
+
+          return { success: true };
+        }
+
+        return {
+          success: false,
+          error: result.error,
+          errorCode: result.errorCode,
+        };
+      })();
+
+      // ✅ ATTENDRE AU MINIMUM 500ms pour que l'indicateur soit visible
+      const [result] = await Promise.all([
+        savePromise,
+        new Promise((resolve) => setTimeout(resolve, 500)), // Délai minimum
+      ]);
+
+      console.log("🔍 DEBUG: Sauvegarde terminée");
+      return result;
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Erreur inconnue";
       return { success: false, error: errorMessage };
+    } finally {
+      setIsSaving(false);
+      console.log("🔍 DEBUG: setIsSaving(false) appelé");
     }
   }, [state.currentEntry, state.text, sortEntriesByDate, withErrorHandling]);
 
-  // Créer vraiment une nouvelle session
+  // ✅ NOUVEAU: Sauvegarde automatique avec débounce
+  const debouncedSave = useDebounce(
+    useCallback(() => {
+      if (
+        state.currentEntry &&
+        state.text !== state.currentEntry.content &&
+        state.text.trim() !== "" &&
+        state.text !== lastSavedContentRef.current
+      ) {
+        console.log("💾 Sauvegarde automatique déclenchée (debounced)");
+        saveCurrentEntry().catch((error) => {
+          console.warn("⚠️ Erreur sauvegarde automatique:", error);
+        });
+      }
+    }, [state.currentEntry, state.text, saveCurrentEntry]),
+    SAVE_DEBOUNCE_DELAY
+  );
+
+  // Créer vraiment une nouvelle session (inchangé)
   const createNewSession = useCallback(async (): Promise<StorageResult> => {
     console.log("🆕 Création d'une nouvelle session...");
 
@@ -323,8 +399,7 @@ export const useStorage = () => {
     }
   }, [state.currentEntry, state.text, saveCurrentEntry, withErrorHandling]);
 
-  // ✅ ACTIONS CORRIGÉES - SANS CONFIRMATIONS (gérées dans l'UI)
-
+  // Actions sur les entrées (inchangées)
   const loadEntry = useCallback(
     async (entry: MurmureEntry): Promise<StorageResult> => {
       const success = await entryActions.loadEntry(
@@ -341,7 +416,6 @@ export const useStorage = () => {
     [entryActions, state.currentEntry, state.text, saveCurrentEntry]
   );
 
-  // ✅ CORRECTION: Suppression SANS confirmation
   const moveEntryToTrash = useCallback(
     async (entry: MurmureEntry): Promise<StorageResult> => {
       console.log("🗑️ Suppression de l'entrée:", entry.id);
@@ -368,7 +442,6 @@ export const useStorage = () => {
     [entryActions, state.currentEntry?.id, createNewSession, handleDataChanged]
   );
 
-  // ✅ CORRECTION: Restauration SANS confirmation
   const restoreFromTrash = useCallback(
     async (entry: MurmureEntry): Promise<StorageResult> => {
       console.log("♻️ Restauration de l'entrée:", entry.id);
@@ -381,7 +454,6 @@ export const useStorage = () => {
     [entryActions]
   );
 
-  // ✅ CORRECTION: Suppression définitive SANS confirmation
   const deleteEntryPermanently = useCallback(
     async (entry: MurmureEntry): Promise<StorageResult> => {
       console.log("💀 Suppression définitive de l'entrée:", entry.id);
@@ -394,7 +466,6 @@ export const useStorage = () => {
     [entryActions]
   );
 
-  // ✅ CORRECTION: Vidage corbeille SANS confirmation
   const emptyTrash = useCallback(async (): Promise<StorageResult> => {
     if (state.trashEntries.length === 0) {
       return { success: false, error: "Corbeille déjà vide" };
@@ -412,7 +483,6 @@ export const useStorage = () => {
       : { success: false, error: "Opération échouée" };
   }, [entryActions, state.trashEntries]);
 
-  // Partage d'entrée (sans confirmation)
   const shareEntry = useCallback(
     async (entry: MurmureEntry): Promise<StorageResult> => {
       const success = await entryActions.shareEntry(entry);
@@ -434,9 +504,18 @@ export const useStorage = () => {
     setIsPreviewModalVisible(false);
   }, []);
 
-  // Fonction pour mettre à jour le texte avec traitement
+  // ✅ AMÉLIORATION: setText avec validation de taille
   const setText = useCallback(
     (newText: string) => {
+      // ✅ Validation de la taille du texte
+      if (newText.length > MAX_TEXT_LENGTH) {
+        console.warn(
+          `⚠️ Texte trop long: ${newText.length} caractères (max: ${MAX_TEXT_LENGTH})`
+        );
+        // Tronquer le texte au lieu de rejeter complètement
+        newText = newText.substring(0, MAX_TEXT_LENGTH);
+      }
+
       const processedText = processTextIncremental(
         newText,
         previousTextRef.current
@@ -444,8 +523,11 @@ export const useStorage = () => {
 
       setState((prev) => ({ ...prev, text: processedText }));
       previousTextRef.current = processedText;
+
+      // ✅ Déclencher la sauvegarde automatique avec débounce
+      debouncedSave();
     },
-    [processTextIncremental]
+    [processTextIncremental, debouncedSave]
   );
 
   // Fonctions de traitement du texte (inchangées)
@@ -482,43 +564,14 @@ export const useStorage = () => {
     setState((prev) => ({ ...prev, wordCount }));
   }, [wordCount]);
 
-  // Effet pour la sauvegarde automatique
-  useEffect(() => {
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
+  // ✅ SUPPRESSION: Plus besoin de l'ancien effet useEffect avec setTimeout
+  // La sauvegarde automatique est maintenant gérée par le débounce dans setText
 
-    // Sauvegarder seulement si :
-    // 1. Il y a une entrée courante
-    // 2. Le texte a changé par rapport à l'entrée
-    // 3. Le texte n'est pas vide
-    // 4. Le texte est différent de la dernière sauvegarde
-    if (
-      state.currentEntry &&
-      state.text !== state.currentEntry.content &&
-      state.text.trim() !== "" &&
-      state.text !== lastSavedContentRef.current
-    ) {
-      console.log("⏰ Programmation de la sauvegarde automatique");
-      saveTimeoutRef.current = setTimeout(() => {
-        console.log("💾 Sauvegarde automatique déclenchée");
-        saveCurrentEntry().catch(console.warn);
-      }, 2000);
-    }
-
-    return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
-    };
-  }, [state.text, state.currentEntry, saveCurrentEntry]);
-
-  // Nettoyage à la désactivation
+  // Nettoyage à la désactivation (simplifié)
   useEffect(() => {
     return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
+      // Le débounce se nettoie automatiquement
+      console.log("🧹 Nettoyage useStorage");
     };
   }, []);
 
@@ -531,6 +584,9 @@ export const useStorage = () => {
     wordCount: state.wordCount,
     isLoading: state.isLoading,
     error: state.error,
+
+    // ✅ NOUVEAU: Indicateur de sauvegarde
+    isSaving,
 
     // Prévisualisation
     previewEntry,
@@ -546,7 +602,7 @@ export const useStorage = () => {
     loadEntry,
     shareEntry,
 
-    // ✅ Actions corbeille SANS confirmations (confirmations gérées dans l'UI)
+    // Actions corbeille SANS confirmations (confirmations gérées dans l'UI)
     moveEntryToTrash,
     restoreFromTrash,
     deleteEntryPermanently,

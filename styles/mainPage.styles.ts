@@ -492,7 +492,7 @@ export const landingStyles = StyleSheet.create({
 
   // Features Section
   features: {
-    paddingHorizontal: 20,
+    paddingHorizontal: Platform.OS === "web" ? 20 : 0,
     paddingVertical: 80,
     alignItems: "center",
   },
@@ -512,9 +512,10 @@ export const landingStyles = StyleSheet.create({
   featureGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    justifyContent: "space-between",
+    justifyContent: Platform.OS === "web" ? "space-between" : "center",
     maxWidth: 1300,
     width: "100%",
+    paddingHorizontal: Platform.OS === "web" ? 0 : 20,
   },
 
   featureCard: {
@@ -522,12 +523,14 @@ export const landingStyles = StyleSheet.create({
     borderRadius: 16,
     alignItems: "center",
     width: Platform.OS === "web" ? 280 : "100%",
+    maxWidth: Platform.OS === "web" ? 280 : 320,
     minHeight: 240,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 20,
-    elevation: 8,
-    margin: 16,
+    shadowOffset: { width: 0, height: 1 },
+    shadowRadius: 5,
+    elevation: 2,
+    marginVertical: 16,
+    marginHorizontal: Platform.OS === "web" ? 16 : 0,
     ...(Platform.OS === "web" && ({ transition: "all 0.3s ease" } as any)),
     cursor: Platform.OS === "web" ? "default" : undefined,
   },

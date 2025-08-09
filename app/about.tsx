@@ -25,7 +25,7 @@ const useWebSEO = () => {
         if (metaDescription) {
           metaDescription.setAttribute(
             "content",
-            "Découvrez l'histoire de Murmure, notre mission et nos engagements. Un refuge numérique pour l'écriture introspective, 100% privé et gratuit à vie."
+            "Découvrez l'histoire de Murmure, notre mission et nos engagements. Un refuge numérique pour l'écriture introspective, 100% privé et gratuit."
           );
         }
       }
@@ -129,7 +129,7 @@ const AboutPage = memo(() => {
       },
       {
         icon: "💸",
-        title: "Gratuit à vie",
+        title: "Gratuit",
         description:
           "L'écriture introspective ne devrait pas avoir de prix. Murmure restera toujours gratuite.",
       },
@@ -155,7 +155,7 @@ const AboutPage = memo(() => {
     <ScrollView
       style={[styles.container, dynamicStyles.container]}
       removeClippedSubviews={true}
-      showsVerticalScrollIndicator={false}
+      showsVerticalScrollIndicator={true}
       bounces={true}
     >
       {/* Header avec navigation */}
@@ -308,119 +308,6 @@ const AboutPage = memo(() => {
           </View>
         </View>
 
-        {/* Team Section */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: currentTheme.text }]}>
-            L&apos;équipe
-          </Text>
-          <View
-            style={[styles.card, { backgroundColor: currentTheme.surface }]}
-          >
-            <Text
-              style={[styles.paragraph, { color: currentTheme.textSecondary }]}
-            >
-              Murmure est développée par une petite équipe passionnée par
-              l&apos;écriture et le bien-être numérique. Nous sommes convaincus que
-              la technologie peut nous aider à mieux nous connaître, sans pour
-              autant nous exposer.
-            </Text>
-            <View style={styles.teamValues}>
-              <Text
-                style={[
-                  styles.teamValue,
-                  { color: currentTheme.textSecondary },
-                ]}
-              >
-                🤝 Équipe bienveillante
-              </Text>
-              <Text
-                style={[
-                  styles.teamValue,
-                  { color: currentTheme.textSecondary },
-                ]}
-              >
-                🔍 Écoute des utilisateurs
-              </Text>
-              <Text
-                style={[
-                  styles.teamValue,
-                  { color: currentTheme.textSecondary },
-                ]}
-              >
-                🌱 Développement durable
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Stats Section */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: currentTheme.text }]}>
-            Murmure en chiffres
-          </Text>
-          <View
-            style={[
-              styles.statsContainer,
-              { flexDirection: isWideScreen ? "row" : "column" },
-            ]}
-          >
-            <View
-              style={[
-                styles.statCard,
-                { backgroundColor: currentTheme.surface },
-              ]}
-            >
-              <Text style={[styles.statNumber, { color: currentTheme.accent }]}>
-                0
-              </Text>
-              <Text
-                style={[
-                  styles.statLabel,
-                  { color: currentTheme.textSecondary },
-                ]}
-              >
-                Données collectées
-              </Text>
-            </View>
-            <View
-              style={[
-                styles.statCard,
-                { backgroundColor: currentTheme.surface },
-              ]}
-            >
-              <Text style={[styles.statNumber, { color: currentTheme.accent }]}>
-                ∞
-              </Text>
-              <Text
-                style={[
-                  styles.statLabel,
-                  { color: currentTheme.textSecondary },
-                ]}
-              >
-                Sessions d&apos;écriture possibles
-              </Text>
-            </View>
-            <View
-              style={[
-                styles.statCard,
-                { backgroundColor: currentTheme.surface },
-              ]}
-            >
-              <Text style={[styles.statNumber, { color: currentTheme.accent }]}>
-                100%
-              </Text>
-              <Text
-                style={[
-                  styles.statLabel,
-                  { color: currentTheme.textSecondary },
-                ]}
-              >
-                Gratuit à vie
-              </Text>
-            </View>
-          </View>
-        </View>
-
         {/* CTA Section */}
         <View style={styles.ctaSection}>
           <Text style={[styles.ctaTitle, { color: currentTheme.text }]}>
@@ -441,7 +328,7 @@ const AboutPage = memo(() => {
               accessibilityRole="button"
               accessibilityLabel="Commencer à utiliser Murmure maintenant"
             >
-              <Text style={styles.ctaText}>✨ Essayer Murmure maintenant</Text>
+              <Text style={styles.ctaText}>Essayer Murmure maintenant</Text>
             </TouchableOpacity>
 
             <TouchableOpacity

@@ -362,7 +362,7 @@ const MurmureLanding = memo(() => {
               accessibilityLabel="Essayer Murmure maintenant gratuitement"
             >
               <Text style={landingStyles.ctaPrimaryGreenText}>
-                ✨ Essayer maintenant
+                Tester version Web
               </Text>
             </TouchableOpacity>
 
@@ -374,7 +374,7 @@ const MurmureLanding = memo(() => {
               accessibilityLabel="Télécharger l'application mobile Murmure"
             >
               <Text style={landingStyles.ctaSecondaryOutlineText}>
-                📱 Télécharger l&apos;app
+                Télécharger l&apos;app
               </Text>
             </TouchableOpacity>
           </View>

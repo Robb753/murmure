@@ -128,18 +128,6 @@ const inspirationPhrases = [
   "Respire et laisse venir ce qui vient...",
   "Tes émotions ont leur propre sagesse...",
   "Écris comme si personne ne lisait...",
-  "Qu'est-ce qui demande à être dit ?",
-  "Ton cœur a des mots que ton esprit ignore...",
-  "Quel secret portes-tu depuis longtemps ?",
-  "Laisse tes doutes s'exprimer librement...",
-  "Si tu pouvais écrire une lettre au temps...",
-  "Qu'est-ce qui te rend vivant en ce moment ?",
-  "Écris ce que tu n'oses dire à voix haute...",
-  "Dans le silence, que murmure ton âme ?",
-  "Tes rêves les plus fous méritent des mots...",
-  "Qu'est-ce qui te manque aujourd'hui ?",
-  "Écris pour celui que tu étais avant...",
-  "Laisse tes contradictions danser ensemble...",
 ];
 
 export default function TabOneScreen() {
@@ -175,6 +163,7 @@ export default function TabOneScreen() {
     restoreFromTrash,
     deleteEntryPermanently,
     emptyTrash,
+    isSaving,
   } = useStorage();
 
   const {
@@ -238,6 +227,8 @@ export default function TabOneScreen() {
 
   const responsiveStyles = createResponsiveMainStyles(design);
 
+  const [lastSaveTime] = useState(0);
+
   // ===============================
   // NOUVELLES FONCTIONS SIMPLIFIÉES
   // ===============================
@@ -296,7 +287,6 @@ export default function TabOneScreen() {
           if (!isWeb()) return;
 
           try {
-            console.log("🌐 [Export Web] Début du téléchargement...");
 
             const blob = new Blob([content], {
               type: "text/plain;charset=utf-8",
@@ -321,26 +311,14 @@ export default function TabOneScreen() {
                 await writable.write(blob);
                 await writable.close();
 
-                console.log(
-                  "✅ [Export Web] Téléchargement réussi avec File System Access API"
-                );
-
                 showAlert("Export réussi ✨", `${wordCount} mots exportés`, [
                   { text: "OK", onPress: () => {} },
                 ]);
                 return;
               } catch (error) {
                 if (error instanceof Error && error.name === "AbortError") {
-                  console.log(
-                    "👤 [Export Web] Téléchargement annulé par l'utilisateur"
-                  );
                   return;
                 }
-
-                console.log(
-                  "📁 [Export Web] File System Access échoué, fallback vers méthode classique...",
-                  error
-                );
               }
             }
 
@@ -356,15 +334,10 @@ export default function TabOneScreen() {
             void a.offsetHeight;
             a.click();
 
-            console.log(
-              "✅ [Export Web] Clic déclenché sur l'élément de téléchargement"
-            );
-
             setTimeout(() => {
               try {
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
-                console.log("🧹 [Export Web] Nettoyage terminé");
               } catch (cleanupError) {
                 console.warn(
                   "⚠️ [Export Web] Erreur lors du nettoyage:",
@@ -642,25 +615,26 @@ export default function TabOneScreen() {
     };
 
     if (text.trim()) {
-      if (Platform.OS === "web") {
-        const confirmed = window.confirm(
-          "Créer une nouvelle session ?\n\nVotre travail actuel sera sauvegardé automatiquement."
-        );
-        if (!confirmed) return;
-      } else {
-        Alert.alert(
-          "Créer une nouvelle session ?",
-          "Votre travail actuel sera sauvegardé automatiquement.",
-          [
-            { text: "Annuler", style: "cancel" },
-            { text: "Nouvelle session", onPress: performCreation },
-          ]
-        );
-        return;
-      }
+      showAlert(
+        "Créer une nouvelle session ?",
+        "Votre travail actuel sera sauvegardé automatiquement.",
+        [
+          {
+            text: "Nouvelle session",
+            style: "default",
+            onPress: performCreation,
+          },
+          {
+            text: "Annuler",
+            style: "cancel",
+            onPress: () => {},
+          },
+        ]
+      );
+    } else {
+      await performCreation();
     }
-    await performCreation();
-  }, [text, createNewSession]);
+  }, [text, createNewSession, showAlert]);
 
   // ===============================
   // GESTION MODE FOCUS SIMPLIFIÉE
@@ -865,7 +839,7 @@ export default function TabOneScreen() {
       if (currentEntry && text.trim() && text !== currentEntry.content) {
         saveCurrentEntry().catch(console.warn);
       }
-    }, 20000);
+    }, 10000);
     return () => clearInterval(interval);
   }, [currentEntry, text, saveCurrentEntry]);
 
@@ -1571,8 +1545,37 @@ export default function TabOneScreen() {
                 >
                   {wordCount} mot{wordCount > 1 ? "s" : ""}
                 </Text>
-              </View>
-
+                {isSaving ? (
+  <View style={{
+    marginLeft: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    backgroundColor: currentTheme.accent,
+    borderRadius: 10,
+    flexDirection: "row",
+    alignItems: "center",
+  }}>
+    <Text style={{ 
+      color: "white", 
+      fontSize: 10,
+      fontWeight: "600"
+    }}>
+      💾 SAVE
+    </Text>
+  </View>) : (
+  // ❌ PROBLÈME: lastSaveTime n'est pas défini
+  lastSaveTime > 0 && (Date.now() - lastSaveTime < 1000) && (
+    <Text style={{ 
+      color: currentTheme.accent, 
+      fontSize: 12, 
+      marginLeft: 8,
+      fontWeight: "500"
+    }}>
+      ✓
+    </Text>
+  )
+)}
+</View>
               <View style={[mainPageStyles.footerCenter, { flex: 1 }]}>
                 {isTimerRunning && (
                   <Text
