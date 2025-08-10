@@ -15,7 +15,7 @@
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.yourname.murmure",
+      "bundleIdentifier": "com.murmureapp.murmure",
       "buildNumber": "1",
       "infoPlist": {
         "CFBundleDisplayName": "Murmure",
@@ -27,7 +27,7 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#fffbeb"
       },
-      "package": "com.yourname.murmure",
+      "package": "com.murmureapp.murmure",
       "versionCode": 1,
       "permissions": ["android.permission.VIBRATE"],
       "blockedPermissions": [
