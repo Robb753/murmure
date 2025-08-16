@@ -282,25 +282,41 @@ const MurmureLanding = memo(() => {
       <View
         style={[
           landingStyles.header,
-          { borderBottomColor: currentTheme.border },
+          {
+            borderBottomColor: currentTheme.border + "30", // Bordure plus subtile
+            backgroundColor: currentTheme.background + "F5", // Semi-transparent
+          },
         ]}
       >
         <View style={landingStyles.headerContent}>
+          {/* Logo à gauche */}
           <View style={landingStyles.logo}>
             <Image
               source={require("@/assets/images/logo-murmure.png")}
               style={[
                 mainPageStyles.logoImage,
-                { width: logoSize, height: logoSize },
+                {
+                  width: logoSize,
+                  height: logoSize,
+                  borderRadius: logoSize * 0.2, // Coins légèrement arrondis
+                  shadowColor: "#8B4513",
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.2,
+                  shadowRadius: 2,
+                },
               ]}
               accessible
               accessibilityLabel="Logo de Murmure"
             />
           </View>
+
+          {/* BurgerMenu qui gère automatiquement responsive */}
           <BurgerMenu
             currentTheme={currentTheme}
             router={router}
             handleDownloadClick={handleDownloadClick}
+            // Vous pouvez forcer un mode si nécessaire :
+            // forceMode={isMobile ? "burger" : "nav"}
           />
         </View>
       </View>
@@ -445,41 +461,66 @@ const MurmureLanding = memo(() => {
 
           {/* CTA Buttons */}
           <View style={landingStyles.ctaContainer}>
-            <TouchableOpacity
-              style={[
-                landingStyles.ctaPrimaryGreen,
-                {
-                  minWidth: isSmallMobile ? 250 : 280,
-                  maxWidth: isSmallMobile ? width - 64 : 320,
-                },
-              ]}
-              onPress={handleWebAppClick}
-              accessible
-              accessibilityRole="button"
-              accessibilityLabel="Essayer Murmure maintenant gratuitement"
-            >
-              <Text style={landingStyles.ctaPrimaryGreenText}>
-                Tester version Web
-              </Text>
-            </TouchableOpacity>
+            {/* ✅ LOGIQUE CONDITIONNELLE : Web vs App native */}
+            {Platform.OS === "web" ? (
+              // 🌐 VERSION WEB - 2 boutons comme avant
+              <>
+                <TouchableOpacity
+                  style={[
+                    landingStyles.ctaPrimaryGreen,
+                    {
+                      minWidth: isSmallMobile ? 250 : 280,
+                      maxWidth: isSmallMobile ? width - 64 : 320,
+                    },
+                  ]}
+                  onPress={handleWebAppClick}
+                  accessible
+                  accessibilityRole="button"
+                  accessibilityLabel="Essayer Murmure maintenant gratuitement"
+                >
+                  <Text style={landingStyles.ctaPrimaryGreenText}>
+                    Version Web
+                  </Text>
+                </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[
-                landingStyles.ctaSecondaryOutline,
-                {
-                  minWidth: isSmallMobile ? 250 : 280,
-                  maxWidth: isSmallMobile ? width - 64 : 320,
-                },
-              ]}
-              onPress={handleDownloadClick}
-              accessible
-              accessibilityRole="button"
-              accessibilityLabel="Télécharger l'application mobile Murmure"
-            >
-              <Text style={landingStyles.ctaSecondaryOutlineText}>
-                Télécharger l&apos;app
-              </Text>
-            </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    landingStyles.ctaSecondaryOutline,
+                    {
+                      minWidth: isSmallMobile ? 250 : 280,
+                      maxWidth: isSmallMobile ? width - 64 : 320,
+                    },
+                  ]}
+                  onPress={handleDownloadClick}
+                  accessible
+                  accessibilityRole="button"
+                  accessibilityLabel="Télécharger l'application mobile Murmure"
+                >
+                  <Text style={landingStyles.ctaSecondaryOutlineText}>
+                    Télécharge l&apos;app
+                  </Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              // 📱 VERSION APP NATIVE - 1 seul bouton
+              <TouchableOpacity
+                style={[
+                  landingStyles.ctaPrimaryGreen,
+                  {
+                    minWidth: isSmallMobile ? 250 : 280,
+                    maxWidth: isSmallMobile ? width - 64 : 320,
+                  },
+                ]}
+                onPress={handleWebAppClick}
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel="Commencer à écrire avec Murmure"
+              >
+                <Text style={landingStyles.ctaPrimaryGreenText}>
+                  Commence à écrire
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* Trust Indicators */}
@@ -703,32 +744,45 @@ const MurmureLanding = memo(() => {
                 />
                 <Text style={landingStyles.footerLogoText}>Murmure</Text>
               </View>
-              <Text
-                style={[
-                  landingStyles.footerDescription,
-                  {
-                    lineHeight: 24,
-                    marginBottom: isMobile ? 8 : 16,
-                    marginTop: 8,
-                  },
-                ]}
+
+              {/* ✅ CORRECTION : Conteneur pour le texte de description */}
+              <View
+                style={{
+                  width: "100%",
+                  flexDirection: "column", // Force la direction verticale pour le conteneur
+                }}
               >
-                L&apos;espace minimaliste pour ton écriture introspective.
-              </Text>
-              <Text
-                style={[
-                  landingStyles.footerDescription,
-                  {
-                    fontSize: 14,
-                    fontStyle: "italic",
-                    opacity: 0.8,
-                    color: "#9ca3af",
-                    lineHeight: 20,
-                  },
-                ]}
-              >
-                Écris sans filtre, murmure tes pensées.
-              </Text>
+                <Text
+                  style={[
+                    landingStyles.footerDescription,
+                    {
+                      lineHeight: 24,
+                      marginBottom: isMobile ? 8 : 16,
+                      marginTop: 8,
+                      width: "100%", // ✅ Largeur complète
+                      flexWrap: "wrap", // ✅ Permet le retour à la ligne
+                    },
+                  ]}
+                >
+                  L&apos;espace minimaliste pour ton écriture introspective.
+                </Text>
+                <Text
+                  style={[
+                    landingStyles.footerDescription,
+                    {
+                      fontSize: 14,
+                      fontStyle: "italic",
+                      opacity: 0.8,
+                      color: "#9ca3af",
+                      lineHeight: 20,
+                      width: "100%", // ✅ Largeur complète
+                      flexWrap: "wrap", // ✅ Permet le retour à la ligne
+                    },
+                  ]}
+                >
+                  Écris sans filtre, murmure tes pensées.
+                </Text>
+              </View>
             </View>
 
             {/* Column 2 - Useful links */}

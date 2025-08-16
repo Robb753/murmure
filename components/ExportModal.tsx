@@ -1,4 +1,4 @@
-// components/ExportModal.tsx - Version entièrement améliorée
+// components/ExportModal.tsx - Version améliorée avec thème unifié
 import React from "react";
 import {
   Modal,
@@ -9,6 +9,7 @@ import {
   Platform,
   Alert,
   ScrollView,
+  Pressable,
 } from "react-native";
 
 interface ExportModalProps {
@@ -43,6 +44,10 @@ export const ExportModal: React.FC<ExportModalProps> = ({
     }, 100);
   };
 
+  const handleOverlayPress = () => {
+    onClose();
+  };
+
   return (
     <Modal
       visible={visible}
@@ -52,16 +57,14 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       statusBarTranslucent={true}
       presentationStyle="overFullScreen"
     >
-      {/* ✅ Overlay avec zone de fermeture */}
-      <View style={styles.overlay}>
-        <TouchableOpacity
-          style={styles.overlayTouchable}
-          onPress={onClose}
-          activeOpacity={1}
-        />
-
-        {/* ✅ Container principal avec design amélioré */}
-        <View
+      {/* ✅ Overlay avec fermeture au clic */}
+      <Pressable
+        style={styles.overlay}
+        onPress={handleOverlayPress}
+        accessible={false}
+      >
+        {/* ✅ Container principal - empêcher la propagation du clic */}
+        <Pressable
           style={[
             styles.modalContainer,
             {
@@ -69,8 +72,9 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               borderColor: currentTheme.border,
             },
           ]}
+          onPress={(e) => e.stopPropagation()}
         >
-          {/* ✅ Header avec icône et bouton fermeture */}
+          {/* ✅ Header avec icône et titre */}
           <View style={styles.header}>
             <View style={styles.headerContent}>
               <View
@@ -97,13 +101,15 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               </View>
             </View>
 
-            {/* Bouton fermeture en haut à droite */}
+            {/* ✅ Bouton fermeture discret */}
             <TouchableOpacity
               onPress={onClose}
               style={[
                 styles.closeButton,
-                { backgroundColor: currentTheme.muted + "20" },
+                { backgroundColor: currentTheme.border + "40" },
               ]}
+              accessibilityRole="button"
+              accessibilityLabel="Fermer"
             >
               <Text
                 style={[styles.closeButtonText, { color: currentTheme.muted }]}
@@ -117,6 +123,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           <ScrollView
             style={styles.optionsContainer}
             showsVerticalScrollIndicator={false}
+            bounces={false}
           >
             {options.map((option, index) => {
               const isCancel = option.style === "cancel";
@@ -143,16 +150,18 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                   ]}
                   onPress={() => handleOptionPress(option)}
                   activeOpacity={0.8}
+                  accessibilityRole="button"
+                  accessibilityLabel={option.text}
                 >
                   <View style={styles.optionContent}>
-                    {/* Icône de l'option */}
+                    {/* ✅ Icône de l'option */}
                     {option.icon && (
                       <View style={styles.optionIconContainer}>
                         <Text style={styles.optionIcon}>{option.icon}</Text>
                       </View>
                     )}
 
-                    {/* Texte principal et description */}
+                    {/* ✅ Texte principal et description */}
                     <View style={styles.optionTextContainer}>
                       <Text
                         style={[
@@ -170,7 +179,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                         {option.text}
                       </Text>
 
-                      {/* Description optionnelle */}
+                      {/* ✅ Description optionnelle */}
                       {option.description && (
                         <Text
                           style={[
@@ -183,7 +192,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                       )}
                     </View>
 
-                    {/* Flèche indicatrice pour les actions */}
+                    {/* ✅ Flèche indicatrice pour les actions */}
                     {!isCancel && (
                       <View style={styles.arrowContainer}>
                         <Text
@@ -206,16 +215,18 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             })}
           </ScrollView>
 
-          {/* ✅ Footer informatif */}
-          <View style={styles.footer}>
+          {/* ✅ Footer informatif avec thème */}
+          <View
+            style={[styles.footer, { borderTopColor: currentTheme.border }]}
+          >
             <Text style={[styles.footerText, { color: currentTheme.muted }]}>
               {Platform.OS === "web"
                 ? "Cliquez en dehors pour fermer"
                 : "Touchez en dehors pour fermer"}
             </Text>
           </View>
-        </View>
-      </View>
+        </Pressable>
+      </Pressable>
     </Modal>
   );
 };
@@ -223,18 +234,11 @@ export const ExportModal: React.FC<ExportModalProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    backgroundColor: "rgba(0, 0, 0, 0.6)", // ✅ Overlay plus sombre pour meilleur contraste
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 20,
     paddingVertical: 40,
-  },
-  overlayTouchable: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
   },
   modalContainer: {
     borderRadius: 20,
@@ -341,6 +345,7 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingTop: 16,
     alignItems: "center",
+    borderTopWidth: 1,
   },
   footerText: {
     fontSize: 12,
@@ -348,7 +353,7 @@ const styles = StyleSheet.create({
   },
 });
 
-// ✅ Hook mis à jour avec options enrichies
+// ✅ Hook amélioré avec gestion du thème
 export const useWebAlert = (currentTheme: any) => {
   const [modalState, setModalState] = React.useState<{
     visible: boolean;
@@ -388,7 +393,7 @@ export const useWebAlert = (currentTheme: any) => {
           options,
         });
       } else {
-        // Sur mobile, utiliser Alert.alert natif (simplifié)
+        // ✅ Sur mobile, utiliser Alert.alert natif (simplifié)
         const simpleOptions = options.map((opt) => ({
           text: opt.text,
           onPress: opt.onPress,
@@ -424,7 +429,7 @@ export const useWebAlert = (currentTheme: any) => {
   };
 };
 
-// ✅ Exemple d'utilisation avec options enrichies - TYPAGE CORRIGÉ
+// ✅ Fonction helper pour créer des options d'export avec thème
 export const createExportOptions = (
   wordCount: number,
   dateText: string,
@@ -459,7 +464,7 @@ export const createExportOptions = (
     },
   ];
 
-  // Options spécifiques à la plateforme
+  // ✅ Options spécifiques à la plateforme
   if (Platform.OS === "web" && downloadFile) {
     options.push({
       text: "Télécharger (.txt)",
@@ -492,7 +497,7 @@ export const createExportOptions = (
     }
   }
 
-  // Option d'annulation
+  // ✅ Option d'annulation
   options.push({
     text: "Annuler",
     icon: "",

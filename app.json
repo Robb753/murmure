@@ -12,7 +12,9 @@
       "contentFit": "contain",
       "backgroundColor": "#fffbeb"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.murmureapp.murmure",
@@ -29,7 +31,11 @@
       },
       "package": "com.murmureapp.murmure",
       "versionCode": 1,
-      "permissions": ["android.permission.VIBRATE"],
+      "permissions": [
+        "android.permission.VIBRATE",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ],
       "blockedPermissions": [
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE"
@@ -50,8 +56,15 @@
       "bundler": "metro"
     },
     "extra": {
-      "description": "Une app d'écriture libre pour exprimer tes pensées sans filtre"
+      "description": "Une app d'écriture libre pour exprimer tes pensées sans filtre",
+      "router": {},
+      "eas": {
+        "projectId": "5cccb246-6475-428c-8ab6-5eacfad0d42d"
+      }
     },
-    "plugins": ["expo-router", "expo-audio"]
+    "plugins": [
+      "expo-router",
+      "expo-audio"
+    ]
   }
 }

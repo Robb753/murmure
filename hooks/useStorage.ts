@@ -1,6 +1,7 @@
 // hooks/useStorage.ts - Version avec débounce optimisé
 import MurmureStorage, { MurmureEntry, StorageResult } from "@/app/lib/storage";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { Platform, TextInput } from "react-native"; // ✅ AJOUT: Import Platform et TextInput
 import { useErrorHandler } from "./useErrorHandler";
 import { useEntryActions } from "./useEntryActions";
 import { useTextProcessor } from "./useTextProcessor";
@@ -23,7 +24,7 @@ interface TextOptions {
 }
 
 // ✅ NOUVEAU: Configuration du débounce
-const SAVE_DEBOUNCE_DELAY = 3000; // 1 seconde (plus réactif que 2 secondes)
+const SAVE_DEBOUNCE_DELAY = 3000; // 3 secondes
 const MAX_TEXT_LENGTH = 100000; // 100k caractères maximum
 
 // ✅ NOUVEAU: Fonction débounce optimisée
@@ -76,6 +77,7 @@ export const useStorage = () => {
   const lastSavedContentRef = useRef<string>("");
   const previousTextRef = useRef<string>("");
   const isFirstLoadRef = useRef(true);
+  const textInputRef = useRef<TextInput | null>(null); // ✅ AJOUT: Ref pour le TextInput
 
   // Hooks utilitaires
   const { withErrorHandling } = useErrorHandler({
@@ -102,7 +104,20 @@ export const useStorage = () => {
     []
   );
 
-  // Chargement des données (inchangé)
+  // ✅ NOUVEAU: Fonction pour positionner le curseur au début
+  const positionCursorAtStart = useCallback(() => {
+    setTimeout(() => {
+      if (textInputRef.current) {
+        textInputRef.current.focus();
+        // Sur web, positionner explicitement le curseur au début
+        if (Platform.OS === "web") {
+          (textInputRef.current as any).setSelectionRange?.(0, 0);
+        }
+      }
+    }, 200);
+  }, []);
+
+  // Chargement des données
   const loadData = useCallback(async (): Promise<StorageResult> => {
     setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
@@ -139,6 +154,7 @@ export const useStorage = () => {
 
       let currentEntry: MurmureEntry | null = null;
       let textContent = "";
+      let shouldPositionCursor = false;
 
       // Première fois: créer une entrée de bienvenue si aucune entrée
       if (isFirstLoadRef.current && allEntries.length === 0) {
@@ -153,6 +169,7 @@ export const useStorage = () => {
         if (firstEntryResult) {
           currentEntry = firstEntryResult;
           textContent = processText(firstEntryResult.content);
+          shouldPositionCursor = true; // ✅ Marquer pour positionner le curseur
 
           // Recharger les entrées pour inclure la nouvelle
           const updatedEntries = await withErrorHandling(
@@ -179,6 +196,11 @@ export const useStorage = () => {
           currentEntry = allEntries[0] || null;
           textContent = currentEntry ? processText(currentEntry.content) : "";
         }
+
+        // ✅ Vérifier si c'est le texte de bienvenue
+        if (textContent.includes("Bienvenue dans Murmure")) {
+          shouldPositionCursor = true;
+        }
       }
 
       setState((prev) => ({
@@ -201,6 +223,11 @@ export const useStorage = () => {
         MurmureStorage.saveCurrentEntryId(currentEntry.id);
       }
 
+      // ✅ Positionner le curseur au début si nécessaire
+      if (shouldPositionCursor) {
+        positionCursorAtStart();
+      }
+
       isFirstLoadRef.current = false;
       console.log("✅ Chargement terminé");
 
@@ -212,7 +239,13 @@ export const useStorage = () => {
       console.error("❌ Erreur lors du chargement:", error);
       return { success: false, error: errorMessage };
     }
-  }, [withErrorHandling, sortEntriesByDate, sortTrashByDeletion, processText]);
+  }, [
+    withErrorHandling,
+    sortEntriesByDate,
+    sortTrashByDeletion,
+    processText,
+    positionCursorAtStart,
+  ]);
 
   // Callback pour rechargement des données
   const handleDataChanged = useCallback(() => {
@@ -353,7 +386,7 @@ export const useStorage = () => {
     SAVE_DEBOUNCE_DELAY
   );
 
-  // Créer vraiment une nouvelle session (inchangé)
+  // Créer vraiment une nouvelle session
   const createNewSession = useCallback(async (): Promise<StorageResult> => {
     console.log("🆕 Création d'une nouvelle session...");
 
@@ -386,6 +419,9 @@ export const useStorage = () => {
         lastSavedContentRef.current = "";
         previousTextRef.current = "";
 
+        // ✅ Positionner le curseur au début pour la nouvelle session
+        positionCursorAtStart();
+
         return { success: true };
       }
 
@@ -397,7 +433,13 @@ export const useStorage = () => {
       console.error("❌ Erreur création session:", error);
       return { success: false, error: "Erreur lors de la création" };
     }
-  }, [state.currentEntry, state.text, saveCurrentEntry, withErrorHandling]);
+  }, [
+    state.currentEntry,
+    state.text,
+    saveCurrentEntry,
+    withErrorHandling,
+    positionCursorAtStart,
+  ]);
 
   // Actions sur les entrées (inchangées)
   const loadEntry = useCallback(
@@ -564,9 +606,6 @@ export const useStorage = () => {
     setState((prev) => ({ ...prev, wordCount }));
   }, [wordCount]);
 
-  // ✅ SUPPRESSION: Plus besoin de l'ancien effet useEffect avec setTimeout
-  // La sauvegarde automatique est maintenant gérée par le débounce dans setText
-
   // Nettoyage à la désactivation (simplifié)
   useEffect(() => {
     return () => {
@@ -616,5 +655,8 @@ export const useStorage = () => {
 
     // Utilitaires
     getDaysUntilDeletion: entryActions.getDaysUntilDeletion,
+
+    // ✅ NOUVEAU: Ref pour le TextInput
+    textInputRef,
   };
 };

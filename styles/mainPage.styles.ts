@@ -1,7 +1,42 @@
 import { DimensionValue, Platform, StyleSheet } from "react-native";
 
 // ==========================================
-// STYLES EXISTANTS DE L'APPLICATION
+// CONSTANTES DE DESIGN
+// ==========================================
+
+const COLORS = {
+  primary: "#8B4513",
+  primaryLight: "#A0522D",
+  accent: "#F4D03F",
+  accentLight: "#FFF8DC",
+  accentDark: "#F39C12",
+  background: "rgba(255, 255, 255, 0.95)",
+  text: "#8B4513",
+  textSecondary: "#b45309",
+  border: "rgba(139, 115, 85, 0.3)",
+  shadow: "#000",
+} as const;
+
+const SPACING = {
+  xs: 4,
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 20,
+  xxl: 24,
+  xxxl: 32,
+} as const;
+
+const BORDER_RADIUS = {
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 20,
+  xxl: 25,
+} as const;
+
+// ==========================================
+// STYLES DE L'APPLICATION PRINCIPALE
 // ==========================================
 
 export const mainPageStyles = StyleSheet.create({
@@ -16,16 +51,16 @@ export const mainPageStyles = StyleSheet.create({
   header: {
     flexDirection: "row" as const,
     alignItems: "center" as const,
-    paddingHorizontal: 20,
-    paddingVertical: Platform.OS === "web" ? 8 : 10,
+    paddingHorizontal: SPACING.xl,
+    paddingVertical: Platform.OS === "web" ? SPACING.sm : 10,
     borderBottomWidth: 1,
     minHeight: Platform.OS === "web" ? 42 : 48,
   },
 
   headerButton: {
-    paddingHorizontal: 12,
+    paddingHorizontal: SPACING.md,
     paddingVertical: 6,
-    borderRadius: 8,
+    borderRadius: BORDER_RADIUS.sm,
   },
 
   headerButtonText: {
@@ -35,8 +70,8 @@ export const mainPageStyles = StyleSheet.create({
 
   writingContainer: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingVertical: 20,
+    paddingHorizontal: SPACING.xl,
+    paddingVertical: SPACING.xl,
     justifyContent: "center" as const,
     alignItems: "center" as const,
   },
@@ -45,10 +80,10 @@ export const mainPageStyles = StyleSheet.create({
     width: "100%" as DimensionValue,
     maxWidth: 1150,
     flex: 1,
-    padding: 24,
+    padding: SPACING.xxl,
     justifyContent: "center" as const,
     alignItems: "center" as const,
-    borderRadius: 16,
+    borderRadius: BORDER_RADIUS.lg,
   },
 
   textInput: {
@@ -61,8 +96,8 @@ export const mainPageStyles = StyleSheet.create({
     flexDirection: "row" as const,
     justifyContent: "space-between" as const,
     alignItems: "center" as const,
-    paddingHorizontal: 20,
-    paddingVertical: Platform.OS === "web" ? 6 : 8,
+    paddingHorizontal: SPACING.xl,
+    paddingVertical: Platform.OS === "web" ? 6 : SPACING.sm,
     borderTopWidth: 1,
     minHeight: Platform.OS === "web" ? 36 : 42,
   },
@@ -83,7 +118,7 @@ export const mainPageStyles = StyleSheet.create({
     flexDirection: "row" as const,
     justifyContent: "flex-end" as const,
     alignItems: "center" as const,
-    gap: 8,
+    gap: SPACING.sm,
   },
 
   footerButton: {
@@ -115,96 +150,214 @@ export const mainPageStyles = StyleSheet.create({
   },
 });
 
+// ==========================================
+// STYLES DE LA PAGE DE LANDING
+// ==========================================
+
 export const landingStyles = StyleSheet.create({
-  // Container principal
+  // ================== LAYOUT ==================
   container: {
     flex: 1,
   },
 
-  // Header styles
+  // ================== HEADER ==================
   header: {
     borderBottomWidth: 1,
     paddingTop: Platform.OS === "web" ? 0 : 50,
+    backgroundColor: COLORS.background,
+    ...(Platform.OS === "web" && ({
+      backdropFilter: "blur(10px)",
+      position: "sticky",
+      top: 0,
+      zIndex: 100,
+    } as any)),
   },
 
   headerContent: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: SPACING.xxl,
+    paddingVertical: SPACING.xl,
     maxWidth: 1200,
     alignSelf: "center",
     width: "100%",
   },
 
+  headerContentMobile: {
+    paddingHorizontal: SPACING.xl,
+    paddingVertical: SPACING.lg,
+  },
+
+  // ================== LOGO ==================
   logo: {
     flexDirection: "row",
     alignItems: "center",
+    flex: 1,
   },
 
   logoIcon: {
     fontSize: 32,
-    marginRight: 8,
+    marginRight: SPACING.md,
   },
 
   logoText: {
     fontSize: 24,
-    fontWeight: "700",
+    fontWeight: "600",
     fontFamily: Platform.select({
       ios: "Palatino",
       android: "serif",
       web: "'Crimson Text', 'Palatino Linotype', serif",
     }),
+    letterSpacing: 0.5,
   },
 
-  // Navigation
+  logoMobile: {
+    marginRight: SPACING.md,
+  },
+
+  logoTextMobile: {
+    fontSize: 22,
+  },
+
+  // ================== NAVIGATION ==================
   nav: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 16,
+    gap: 10,
+    flexWrap: "wrap",
   },
 
   navItem: {
-    paddingVertical: 8,
-    marginRight: 32,
+    paddingVertical: 10,
+    paddingHorizontal: SPACING.lg,
+    borderRadius: BORDER_RADIUS.md,
+    ...(Platform.OS === "web" && ({
+      transition: "all 0.25s ease",
+      cursor: "pointer",
+      ":hover": {
+        backgroundColor: "rgba(139, 115, 85, 0.08)",
+        transform: "translateY(-1px)",
+      },
+    } as any)),
   },
 
   navText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "500",
+    letterSpacing: 0.3,
   },
 
+  // ================== BOUTONS ==================
+  // Bouton "À propos"
+  aboutButton: {
+    paddingVertical: 10,
+    paddingHorizontal: SPACING.lg,
+    borderRadius: BORDER_RADIUS.md,
+    ...(Platform.OS === "web" && ({
+      transition: "all 0.25s ease",
+      cursor: "pointer",
+      ":hover": {
+        backgroundColor: "rgba(139, 115, 85, 0.08)",
+        transform: "translateY(-1px)",
+      },
+    } as any)),
+  },
+
+  // Bouton "Soutenir"
+  supportButton: {
+    paddingHorizontal: 18,
+    paddingVertical: 11,
+    borderRadius: BORDER_RADIUS.lg,
+    backgroundColor: COLORS.accentLight,
+    borderWidth: 1.5,
+    borderColor: COLORS.accent,
+    shadowColor: COLORS.accentDark,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+    ...(Platform.OS === "web" && ({
+      transition: "all 0.25s ease",
+      cursor: "pointer",
+      ":hover": {
+        backgroundColor: "#FFF3CD",
+        borderColor: "#F1C40F",
+        transform: "translateY(-1px)",
+        shadowOpacity: 0.15,
+        shadowRadius: 6,
+      },
+    } as any)),
+  },
+
+  supportButtonText: {
+    color: COLORS.text,
+    fontSize: 14,
+    fontWeight: "600",
+    letterSpacing: 0.2,
+  },
+
+  // Bouton "Version Web"
+  webAppButton: {
+    paddingHorizontal: 18,
+    paddingVertical: 11,
+    borderRadius: BORDER_RADIUS.lg,
+    backgroundColor: "rgba(139, 115, 85, 0.05)",
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+    ...(Platform.OS === "web" && ({
+      transition: "all 0.25s ease",
+      cursor: "pointer",
+      ":hover": {
+        backgroundColor: "rgba(139, 115, 85, 0.1)",
+        borderColor: "rgba(139, 115, 85, 0.5)",
+        transform: "translateY(-1px)",
+      },
+    } as any)),
+  },
+
+  webAppButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+    letterSpacing: 0.2,
+  },
+
+  // Bouton principal
   primaryButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingHorizontal: SPACING.xl,
+    paddingVertical: SPACING.md,
+    borderRadius: BORDER_RADIUS.lg,
+    backgroundColor: COLORS.primary,
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 4,
+    ...(Platform.OS === "web" && ({
+      transition: "all 0.25s ease",
+      cursor: "pointer",
+      ":hover": {
+        backgroundColor: COLORS.primaryLight,
+        transform: "translateY(-1px)",
+        shadowOpacity: 0.35,
+        shadowRadius: 8,
+      },
+    } as any)),
   },
 
   primaryButtonText: {
-    color: "white",
+    color: "#FFFFFF",
+    fontSize: 14,
     fontWeight: "600",
+    letterSpacing: 0.3,
   },
 
-  // Nouveau bouton soft pour le header
-  primaryButtonSoft: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 25,
-    ...(Platform.OS === "web" && ({ transition: "all 0.3s ease" } as any)),
-  },
-
-  primaryButtonSoftText: {
-    fontSize: 16,
-    fontWeight: "500",
-  },
-
-  // Hero section
+  // ================== HERO SECTION ==================
   hero: {
-    paddingHorizontal: 20,
+    paddingHorizontal: SPACING.xl,
     paddingVertical: 80,
     alignItems: "center",
-    maxWidth: 1200 as const,
+    maxWidth: 1200,
     alignSelf: "center",
     width: "100%",
     position: "relative",
@@ -238,7 +391,7 @@ export const landingStyles = StyleSheet.create({
   },
 
   heroTitleContainer: {
-    marginBottom: 32,
+    marginBottom: SPACING.xxxl,
     alignItems: "center",
   },
 
@@ -246,7 +399,7 @@ export const landingStyles = StyleSheet.create({
     fontSize: Platform.OS === "web" ? 48 : 32,
     fontWeight: "400",
     textAlign: "center",
-    marginBottom: 16,
+    marginBottom: SPACING.lg,
     fontFamily: Platform.select({
       ios: "Palatino",
       android: "serif",
@@ -258,7 +411,7 @@ export const landingStyles = StyleSheet.create({
     fontSize: Platform.OS === "web" ? 40 : 28,
     fontWeight: "300",
     textAlign: "center",
-    marginBottom: 24,
+    marginBottom: SPACING.xxl,
     fontFamily: Platform.select({
       ios: "Palatino",
       android: "serif",
@@ -280,7 +433,7 @@ export const landingStyles = StyleSheet.create({
     }),
   },
 
-  // Phone Mockup
+  // ================== PHONE MOCKUP ==================
   phoneMockupContainer: {
     marginBottom: 64,
   },
@@ -293,8 +446,8 @@ export const landingStyles = StyleSheet.create({
   phoneGradient: {
     backgroundColor: "#92400e",
     borderRadius: 40,
-    padding: 8,
-    shadowColor: "#000",
+    padding: SPACING.sm,
+    shadowColor: COLORS.shadow,
     shadowOffset: { width: 0, height: 20 },
     shadowOpacity: 0.3,
     shadowRadius: 40,
@@ -304,7 +457,7 @@ export const landingStyles = StyleSheet.create({
   phoneScreen: {
     backgroundColor: "#fffbeb",
     borderRadius: 32,
-    padding: 24,
+    padding: SPACING.xxl,
     minHeight: 400,
   },
 
@@ -312,17 +465,12 @@ export const landingStyles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: SPACING.lg,
   },
 
   phoneAppInfo: {
     flexDirection: "row",
     alignItems: "center",
-  },
-
-  phoneMoonIcon: {
-    fontSize: 16,
-    marginRight: 8,
   },
 
   phoneAppName: {
@@ -337,7 +485,7 @@ export const landingStyles = StyleSheet.create({
 
   phoneTime: {
     fontSize: 12,
-    color: "#b45309",
+    color: COLORS.textSecondary,
   },
 
   phoneContent: {
@@ -346,20 +494,20 @@ export const landingStyles = StyleSheet.create({
 
   phoneSessionLabel: {
     fontSize: 12,
-    color: "#b45309",
+    color: COLORS.textSecondary,
     fontWeight: "500",
-    marginBottom: 12,
+    marginBottom: SPACING.md,
   },
 
   phoneTextArea: {
-    marginBottom: 16,
+    marginBottom: SPACING.lg,
   },
 
   phoneText: {
     fontSize: 12,
     color: "#92400e",
     lineHeight: 18,
-    marginBottom: 8,
+    marginBottom: SPACING.sm,
     fontFamily: Platform.select({
       ios: "Georgia",
       android: "serif",
@@ -379,14 +527,14 @@ export const landingStyles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingTop: 16,
+    paddingTop: SPACING.lg,
     borderTopWidth: 1,
     borderTopColor: "#fde68a",
   },
 
   phoneWordCount: {
     fontSize: 12,
-    color: "#b45309",
+    color: COLORS.textSecondary,
   },
 
   phoneDots: {
@@ -400,27 +548,25 @@ export const landingStyles = StyleSheet.create({
     marginLeft: 4,
   },
 
-  // CTA Buttons
+  // ================== CTA BUTTONS ==================
   ctaContainer: {
-    flexDirection: "column", // ✅ CHANGÉ: Toujours en colonne
+    flexDirection: "column",
     alignItems: "center",
-    gap: 16, // ✅ AJOUTÉ: Espace entre les boutons
-    width: "100%", // ✅ AJOUTÉ: Largeur complète
-    paddingHorizontal: 16, // ✅ AJOUTÉ: Padding horizontal
+    gap: SPACING.lg,
+    width: "100%",
+    paddingHorizontal: SPACING.lg,
   },
 
   ctaPrimaryGreen: {
     backgroundColor: "#16a34a",
-    paddingHorizontal: 32,
-    paddingVertical: 16,
-    borderRadius: 25,
+    paddingHorizontal: SPACING.xxxl,
+    paddingVertical: SPACING.lg,
+    borderRadius: BORDER_RADIUS.xxl,
     minWidth: 280,
-    maxWidth: 320, // ✅ AJOUTÉ: Largeur max
-    width: "100%", // ✅ AJOUTÉ: Largeur responsive
+    maxWidth: 320,
+    width: "100%",
     alignItems: "center",
-    marginBottom: 0, // ✅ CHANGÉ: Pas de margin bottom
-    marginRight: 0, // ✅ CHANGÉ: Pas de margin right
-    shadowColor: "#000",
+    shadowColor: COLORS.shadow,
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 12,
     elevation: 8,
@@ -437,12 +583,12 @@ export const landingStyles = StyleSheet.create({
     backgroundColor: "rgba(255, 255, 255, 0.8)",
     borderWidth: 2,
     borderColor: "#fbbf24",
-    paddingHorizontal: 32,
-    paddingVertical: 16,
-    borderRadius: 25,
+    paddingHorizontal: SPACING.xxxl,
+    paddingVertical: SPACING.lg,
+    borderRadius: BORDER_RADIUS.xxl,
     minWidth: 280,
     alignItems: "center",
-    shadowColor: "#000",
+    shadowColor: COLORS.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -456,34 +602,34 @@ export const landingStyles = StyleSheet.create({
     fontWeight: "500",
   },
 
-  // Trust indicators
+  // ================== TRUST INDICATORS ==================
   trustIndicators: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 32,
+    marginTop: SPACING.xxxl,
   },
 
   trustItem: {
     flexDirection: "row",
     alignItems: "center",
-    marginHorizontal: 24,
+    marginHorizontal: SPACING.xxl,
   },
 
   trustIcon: {
     fontSize: 16,
-    marginRight: 8,
+    marginRight: SPACING.sm,
   },
 
   trustText: {
     fontSize: 14,
-    color: "#b45309",
+    color: COLORS.textSecondary,
     fontWeight: "400",
   },
 
-  // Why Section
+  // ================== SECTIONS ==================
   whySection: {
-    paddingHorizontal: 20,
+    paddingHorizontal: SPACING.xl,
     paddingVertical: 80,
     alignItems: "center",
   },
@@ -495,9 +641,8 @@ export const landingStyles = StyleSheet.create({
     maxWidth: 800,
   },
 
-  // Features Section
   features: {
-    paddingHorizontal: 16,
+    paddingHorizontal: SPACING.lg,
     paddingVertical: 80,
     alignItems: "center",
   },
@@ -525,33 +670,32 @@ export const landingStyles = StyleSheet.create({
   },
 
   featureCard: {
-    padding: 32,
-    borderRadius: 16,
+    padding: SPACING.xxxl,
+    borderRadius: BORDER_RADIUS.lg,
     alignItems: "center",
     width: Platform.OS === "web" ? 280 : "100%",
     maxWidth: 320,
     minHeight: 240,
-    shadowColor: "#000",
+    shadowColor: COLORS.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowRadius: 5,
     elevation: 2,
-    marginVertical: 16,
-    marginHorizontal: Platform.OS === "web" ? 16 : 0, // ✅ Pas de margin horizontale sur mobile
-    alignSelf: "center", // ✅ Force le centrage
+    marginVertical: SPACING.lg,
+    marginHorizontal: Platform.OS === "web" ? SPACING.lg : 0,
+    alignSelf: "center",
     ...(Platform.OS === "web" && ({ transition: "all 0.3s ease" } as any)),
-    cursor: Platform.OS === "web" ? "default" : undefined,
   },
 
   featureIcon: {
     fontSize: 48,
-    marginBottom: 16,
+    marginBottom: SPACING.lg,
   },
 
   featureTitle: {
     fontSize: 20,
     fontWeight: "600",
     textAlign: "center",
-    marginBottom: 12,
+    marginBottom: SPACING.md,
   },
 
   featureDescription: {
@@ -560,9 +704,9 @@ export const landingStyles = StyleSheet.create({
     lineHeight: 22,
   },
 
-  // FAQ Section
+  // ================== FAQ ==================
   faqSection: {
-    paddingHorizontal: 20,
+    paddingHorizontal: SPACING.xl,
     paddingVertical: 80,
     alignItems: "center",
   },
@@ -574,9 +718,9 @@ export const landingStyles = StyleSheet.create({
 
   faqItem: {
     borderWidth: 1,
-    borderRadius: 12,
-    marginBottom: 16,
-    padding: 24,
+    borderRadius: BORDER_RADIUS.md,
+    marginBottom: SPACING.lg,
+    padding: SPACING.xxl,
   },
 
   faqQuestion: {
@@ -589,7 +733,7 @@ export const landingStyles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
     flex: 1,
-    marginRight: 16,
+    marginRight: SPACING.lg,
   },
 
   faqIcon: {
@@ -600,13 +744,13 @@ export const landingStyles = StyleSheet.create({
   faqAnswer: {
     fontSize: 16,
     lineHeight: 24,
-    marginTop: 16,
+    marginTop: SPACING.lg,
   },
 
-  // Footer
+  // ================== FOOTER ==================
   footer: {
     backgroundColor: "#0f172a",
-    paddingHorizontal: 20,
+    paddingHorizontal: SPACING.xl,
     paddingVertical: 64,
   },
 
@@ -624,19 +768,19 @@ export const landingStyles = StyleSheet.create({
 
   footerColumn: {
     flex: 1,
-    marginBottom: Platform.OS === "web" ? 0 : 32,
-    marginRight: Platform.OS === "web" ? 32 : 0,
+    marginBottom: Platform.OS === "web" ? 0 : SPACING.xxxl,
+    marginRight: Platform.OS === "web" ? SPACING.xxxl : 0,
   },
 
   footerLogo: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: SPACING.lg,
   },
 
   footerLogoIcon: {
     fontSize: 32,
-    marginRight: 8,
+    marginRight: SPACING.sm,
   },
 
   footerLogoText: {
@@ -651,9 +795,8 @@ export const landingStyles = StyleSheet.create({
     lineHeight: 24,
   },
 
-  // Nouveau slogan dans le footer
   footerSlogan: {
-    marginTop: 8,
+    marginTop: SPACING.sm,
     fontSize: 14,
     fontStyle: "italic",
     color: "#9ca3af",
@@ -668,73 +811,52 @@ export const landingStyles = StyleSheet.create({
     color: "white",
     fontSize: 18,
     fontWeight: "600",
-    marginBottom: 16,
+    marginBottom: SPACING.lg,
   },
 
   footerLink: {
-    marginBottom: 8, // ✅ CHANGÉ: Réduit l'espace
-    // ✅ AJOUTÉ: Hover effects pour web
-    ...(Platform.OS === "web" &&
-      ({
-        transition: "all 0.2s ease",
-        ":hover": {
-          backgroundColor: "rgba(255, 255, 255, 0.1)",
-          transform: "translateX(4px)",
-        },
-      } as any)),
+    marginBottom: SPACING.sm,
+    ...(Platform.OS === "web" && ({
+      transition: "all 0.2s ease",
+      ":hover": {
+        backgroundColor: "rgba(255, 255, 255, 0.1)",
+        transform: "translateX(4px)",
+      },
+    } as any)),
   },
 
   footerLinkText: {
     color: "#94a3b8",
-    fontSize: 15, // ✅ CHANGÉ: Légèrement plus grand
-    fontWeight: "400", // ✅ AJOUTÉ: Poids de police
-    // ✅ AJOUTÉ: Hover pour web
-    ...(Platform.OS === "web" &&
-      ({
-        transition: "color 0.2s ease",
-        ":hover": {
-          color: "#cbd5e1",
-        },
-      } as any)),
+    fontSize: 15,
+    fontWeight: "400",
+    ...(Platform.OS === "web" && ({
+      transition: "color 0.2s ease",
+      ":hover": {
+        color: "#cbd5e1",
+      },
+    } as any)),
   },
 
   footerButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 12, // ✅ CHANGÉ: Plus arrondi
+    paddingHorizontal: SPACING.xl,
+    paddingVertical: SPACING.md,
+    borderRadius: BORDER_RADIUS.md,
     alignItems: "center",
-    maxWidth: 220, // ✅ CHANGÉ: Largeur ajustée
-    minWidth: 180, // ✅ AJOUTÉ: Largeur minimum
-    // ✅ AJOUTÉ: Shadow améliorée
-    shadowColor: "#000",
+    maxWidth: 220,
+    minWidth: 180,
+    shadowColor: COLORS.shadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
-    // ✅ AJOUTÉ: Hover effects
-    ...(Platform.OS === "web" &&
-      ({
-        transition: "all 0.3s ease",
-        ":hover": {
-          transform: "translateY(-2px)",
-          shadowOpacity: 0.4,
-          shadowRadius: 12,
-        },
-      } as any)),
-  },
-
-  footerSocialIcon: {
-    fontSize: 16,
-    marginRight: 8,
-    opacity: 0.8,
-  },
-
-  footerBadge: {
-    fontSize: 11,
-    color: "#64748b",
-    fontStyle: "italic",
-    marginTop: 6,
-    opacity: 0.7,
+    ...(Platform.OS === "web" && ({
+      transition: "all 0.3s ease",
+      ":hover": {
+        transform: "translateY(-2px)",
+        shadowOpacity: 0.4,
+        shadowRadius: 12,
+      },
+    } as any)),
   },
 
   footerButtonText: {
@@ -743,15 +865,10 @@ export const landingStyles = StyleSheet.create({
     fontWeight: "600",
   },
 
-  socialLinks: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-  },
-
   footerBottom: {
     borderTopWidth: 1,
     borderTopColor: "#1e293b",
-    paddingTop: 32,
+    paddingTop: SPACING.xxxl,
     alignItems: "center",
   },
 
@@ -762,7 +879,10 @@ export const landingStyles = StyleSheet.create({
   },
 });
 
-// Type pour les paramètres de design responsive
+// ==========================================
+// TYPES ET INTERFACE RESPONSIVE
+// ==========================================
+
 interface ResponsiveDesign {
   containerPadding: number;
   isSmallScreen: boolean;
@@ -780,31 +900,31 @@ export const createResponsiveMainStyles = (design: ResponsiveDesign) => {
     responsiveHeader: {
       paddingHorizontal: design.containerPadding,
       minHeight: design.isSmallScreen ? 44 : 48,
-      paddingVertical: design.isSmallScreen ? 8 : 12,
+      paddingVertical: design.isSmallScreen ? SPACING.sm : SPACING.md,
     },
 
     responsiveHeaderButton: {
-      paddingHorizontal: design.isSmallScreen ? 10 : 12,
+      paddingHorizontal: design.isSmallScreen ? 10 : SPACING.md,
       paddingVertical: design.isSmallScreen ? 5 : 6,
-      borderRadius: design.isSmallScreen ? 6 : 8,
+      borderRadius: design.isSmallScreen ? 6 : BORDER_RADIUS.sm,
     },
 
     // Zone d'écriture responsive
     responsiveWritingContainer: {
-      paddingHorizontal: design.isSmallScreen ? 16 : 20,
-      paddingVertical: design.isSmallScreen ? 16 : 20,
+      paddingHorizontal: design.isSmallScreen ? SPACING.lg : SPACING.xl,
+      paddingVertical: design.isSmallScreen ? SPACING.lg : SPACING.xl,
     },
 
     responsivePaperSheet: {
-      padding: design.isSmallScreen ? 20 : 24,
-      borderRadius: design.isSmallScreen ? 12 : 16,
+      padding: design.isSmallScreen ? SPACING.xl : SPACING.xxl,
+      borderRadius: design.isSmallScreen ? SPACING.md : BORDER_RADIUS.lg,
       maxWidth: design.isSmallScreen ? "100%" : 1150,
     },
 
     // Footer responsive
     responsiveFooter: {
       paddingHorizontal: design.containerPadding,
-      paddingVertical: design.isSmallScreen ? 6 : 8,
+      paddingVertical: design.isSmallScreen ? 6 : SPACING.sm,
       minHeight: design.isSmallScreen ? 40 : 42,
     },
 
@@ -818,28 +938,28 @@ export const createResponsiveMainStyles = (design: ResponsiveDesign) => {
     // Timer responsive
     responsiveTimerSection: {
       paddingHorizontal: design.containerPadding,
-      paddingVertical: design.isSmallScreen ? 8 : 12,
-      gap: design.isSmallScreen ? 6 : 8,
+      paddingVertical: design.isSmallScreen ? SPACING.sm : SPACING.md,
+      gap: design.isSmallScreen ? 6 : SPACING.sm,
     },
 
     responsiveDurationButton: {
-      paddingHorizontal: design.isSmallScreen ? 10 : 12,
+      paddingHorizontal: design.isSmallScreen ? 10 : SPACING.md,
       paddingVertical: design.isSmallScreen ? 5 : 6,
-      borderRadius: design.isSmallScreen ? 8 : 12,
+      borderRadius: design.isSmallScreen ? SPACING.sm : SPACING.md,
       minWidth: design.isSmallScreen ? 45 : 50,
     },
 
     responsiveTimerButton: {
-      paddingHorizontal: design.isSmallScreen ? 14 : 16,
-      paddingVertical: design.isSmallScreen ? 6 : 8,
-      borderRadius: design.isSmallScreen ? 8 : 12,
+      paddingHorizontal: design.isSmallScreen ? 14 : SPACING.lg,
+      paddingVertical: design.isSmallScreen ? 6 : SPACING.sm,
+      borderRadius: design.isSmallScreen ? SPACING.sm : SPACING.md,
       minWidth: design.isSmallScreen ? 120 : 140,
     },
 
     // Autres styles responsive
     responsiveTextInput: {
-      paddingHorizontal: design.isSmallScreen ? 12 : 15,
-      paddingVertical: design.isSmallScreen ? 12 : 15,
+      paddingHorizontal: design.isSmallScreen ? SPACING.md : 15,
+      paddingVertical: design.isSmallScreen ? SPACING.md : 15,
     },
 
     responsiveSidebar: {
@@ -848,55 +968,36 @@ export const createResponsiveMainStyles = (design: ResponsiveDesign) => {
 
     responsiveModal: {
       marginHorizontal: design.containerPadding,
-      padding: design.isSmallScreen ? 20 : 24,
-      borderRadius: design.isSmallScreen ? 12 : 16,
+      padding: design.isSmallScreen ? SPACING.xl : SPACING.xxl,
+      borderRadius: design.isSmallScreen ? SPACING.md : BORDER_RADIUS.lg,
     },
 
     responsiveFocusMode: {
       paddingTop: design.insets.top + (design.isSmallScreen ? 50 : 55),
       paddingBottom: design.insets.bottom + (design.isSmallScreen ? 50 : 55),
-      paddingHorizontal:
-        design.containerPadding + (design.isSmallScreen ? 5 : 10),
+      paddingHorizontal: design.containerPadding + (design.isSmallScreen ? 5 : 10),
     },
 
     responsiveFocusControls: {
-      top: design.insets.top + (design.isSmallScreen ? 15 : 20),
-      left: design.isSmallScreen ? 20 : 30,
-      right: design.isSmallScreen ? 20 : 30,
+      top: design.insets.top + (design.isSmallScreen ? 15 : SPACING.xl),
+      left: design.isSmallScreen ? SPACING.xl : 30,
+      right: design.isSmallScreen ? SPACING.xl : 30,
     },
 
     responsiveFocusTimer: {
-      top: design.insets.top + (design.isSmallScreen ? 15 : 20),
-      right: design.isSmallScreen ? 20 : 30,
+      top: design.insets.top + (design.isSmallScreen ? 15 : SPACING.xl),
+      right: design.isSmallScreen ? SPACING.xl : 30,
     },
 
     // Animations et transitions (web only)
-    webTransitions:
-      Platform.OS === "web"
-        ? ({
-            transition: "all 0.2s ease",
-          } as any)
-        : {},
+    webTransitions: Platform.OS === "web" ? ({ transition: "all 0.2s ease" } as any) : {},
 
     responsiveShadow: {
-      shadowColor: "#000",
-      shadowOffset: {
-        width: 0,
-        height: design.isSmallScreen ? 2 : 4,
-      },
-      shadowOpacity: design.isSmallScreen ? 0.1 : 0.15,
-      shadowRadius: design.isSmallScreen ? 4 : 8,
-      elevation: design.isSmallScreen ? 4 : 8,
-    },
-
-    adaptiveLayout: {
-      flexDirection: design.isSmallScreen ? "column" : "row",
-      gap: design.isSmallScreen ? 8 : 12,
-    },
-
-    adaptiveSpacing: {
-      marginVertical: design.isSmallScreen ? 8 : 12,
-      marginHorizontal: design.isSmallScreen ? 12 : 16,
-    },
-  });
-};
+      shadowColor: COLORS.shadow,
+            shadowOffset: {
+              width: 0,
+              height: design.isSmallScreen ? 2 : 4,
+            },
+          },
+        });
+      };

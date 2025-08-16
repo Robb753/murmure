@@ -11,6 +11,7 @@ import {
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { useAdvancedTheme } from "@/hooks/useAdvancedTheme";
+import { BuyMeACoffeeButton } from "@/components/BuyMeACoffeeButton";
 
 // Hook pour gérer le SEO sur le web
 const useWebSEO = () => {
@@ -213,16 +214,17 @@ const AboutPage = memo(() => {
             <Text
               style={[styles.paragraph, { color: currentTheme.textSecondary }]}
             >
-              Murmure est né d&apos;un besoin simple : un espace calme pour écrire
-              librement. Un lieu sans filtres, sans attentes, sans likes. Juste
-              toi, tes mots, et le silence.
+              Murmure est né d&apos;un besoin simple : un espace calme pour
+              écrire librement. Un lieu sans filtres, sans attentes, sans likes.
+              Juste toi, tes mots, et le silence.
             </Text>
             <Text
               style={[styles.paragraph, { color: currentTheme.textSecondary }]}
             >
               Dans un monde où chaque pensée devient contenu, où chaque émotion
               se transforme en post, nous avons voulu créer quelque chose de
-              différent. Un endroit où tes mots n&apos;appartiennent qu&apos;à toi.
+              différent. Un endroit où tes mots n&apos;appartiennent qu&apos;à
+              toi.
             </Text>
           </View>
         </View>
@@ -239,15 +241,15 @@ const AboutPage = memo(() => {
               style={[styles.paragraph, { color: currentTheme.textSecondary }]}
             >
               Offrir un refuge numérique aux personnes qui veulent se
-              reconnecter à elles-mêmes par l&apos;écriture. Dans un monde bruyant,
-              Murmure t&apos;aide à faire le tri dans tes pensées.
+              reconnecter à elles-mêmes par l&apos;écriture. Dans un monde
+              bruyant, Murmure t&apos;aide à faire le tri dans tes pensées.
             </Text>
             <Text
               style={[styles.paragraph, { color: currentTheme.textSecondary }]}
             >
               Nous croyons que l&apos;écriture introspective est un acte de
-              bienveillance envers soi-même. C&apos;est pourquoi nous avons créé un
-              outil simple, accessible et respectueux de ton intimité.
+              bienveillance envers soi-même. C&apos;est pourquoi nous avons créé
+              un outil simple, accessible et respectueux de ton intimité.
             </Text>
           </View>
         </View>
@@ -289,21 +291,23 @@ const AboutPage = memo(() => {
           >
             <View style={styles.quoteContainer}>
               <Text style={[styles.quoteText, { color: currentTheme.text }]}>
-                Parce que ce que tu écris ici n&apos;est pas destiné à être crié.
+                Parce que ce que tu écris ici n&apos;est pas destiné à être
+                crié.
               </Text>
             </View>
             <Text
               style={[styles.paragraph, { color: currentTheme.textSecondary }]}
             >
-              C&apos;est un murmure. Un mot que l&apos;on dit à soi-même, ou à quelqu&apos;un
-              de très proche. Un acte intime. Une confidence que l&apos;on se fait
-              dans le silence de ses pensées.
+              C&apos;est un murmure. Un mot que l&apos;on dit à soi-même, ou à
+              quelqu&apos;un de très proche. Un acte intime. Une confidence que
+              l&apos;on se fait dans le silence de ses pensées.
             </Text>
             <Text
               style={[styles.paragraph, { color: currentTheme.textSecondary }]}
             >
               Dans un monde où tout crie, nous avons choisi de chuchoter. Car
-              les mots les plus vrais sont souvent ceux qu&apos;on prononce tout bas.
+              les mots les plus vrais sont souvent ceux qu&apos;on prononce tout
+              bas.
             </Text>
           </View>
         </View>
@@ -316,8 +320,8 @@ const AboutPage = memo(() => {
           <Text
             style={[styles.ctaSubtitle, { color: currentTheme.textSecondary }]}
           >
-            Rejoins la communauté Murmure et redécouvre le plaisir d&apos;écrire pour
-            toi.
+            Rejoins la communauté Murmure et redécouvre le plaisir d&apos;écrire
+            pour toi.
           </Text>
 
           <View style={styles.ctaButtons}>
@@ -330,13 +334,15 @@ const AboutPage = memo(() => {
             >
               <Text style={styles.ctaText}>Essayer maintenant</Text>
             </TouchableOpacity>
+            
+            <BuyMeACoffeeButton size="large" style={{ minWidth: 280 }} />
 
             <TouchableOpacity
               style={[styles.ctaSecondary, dynamicStyles.backButton]}
               onPress={handleGoBack}
               accessible={true}
               accessibilityRole="button"
-              accessibilityLabel="Retour à l&apos;accueil"
+              accessibilityLabel="Retour à l'accueil"
             >
               <Text
                 style={[

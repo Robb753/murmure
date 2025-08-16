@@ -42,6 +42,8 @@ import {
 } from "@/styles";
 import ThemeSelector from "@/components/ThemeSelector";
 import { useWebAlert } from "@/components/ExportModal";
+// ✅ CORRECTION: Import correct de la nouvelle modal
+import { useNewSessionModal } from "@/components/NewSessionModal";
 
 // Types
 import { MurmureEntry } from "@/app/lib/storage";
@@ -56,7 +58,7 @@ const availableFonts = [
     name: "Système",
     value: Platform.select({
       ios: "System",
-      android: "sans-serif", // Police système Android (Roboto)
+      android: "sans-serif",
       default: "system-ui",
     }),
   },
@@ -64,7 +66,7 @@ const availableFonts = [
     name: "Sans-serif",
     value: Platform.select({
       ios: "Helvetica",
-      android: "sans-serif", // Roboto normal
+      android: "sans-serif",
       default: "sans-serif",
     }),
   },
@@ -72,7 +74,7 @@ const availableFonts = [
     name: "Serif",
     value: Platform.select({
       ios: "Times New Roman",
-      android: "serif", // Police serif Android (Noto Serif)
+      android: "serif",
       default: "serif",
     }),
   },
@@ -80,7 +82,7 @@ const availableFonts = [
     name: "Monospace",
     value: Platform.select({
       ios: "Courier",
-      android: "monospace", // Police monospace Android (Droid Sans Mono)
+      android: "monospace",
       default: "monospace",
     }),
   },
@@ -88,7 +90,7 @@ const availableFonts = [
     name: "Condensé",
     value: Platform.select({
       ios: "Helvetica Neue",
-      android: "sans-serif-condensed", // Police condensée Android
+      android: "sans-serif-condensed",
       default: "sans-serif",
     }),
   },
@@ -96,7 +98,7 @@ const availableFonts = [
     name: "Léger",
     value: Platform.select({
       ios: "Helvetica-Light",
-      android: "sans-serif-light", // Police légère Android
+      android: "sans-serif-light",
       default: "sans-serif",
     }),
   },
@@ -104,7 +106,7 @@ const availableFonts = [
     name: "Fin",
     value: Platform.select({
       ios: "Helvetica-Thin",
-      android: "sans-serif-thin", // Police fine Android
+      android: "sans-serif-thin",
       default: "sans-serif",
     }),
   },
@@ -112,13 +114,13 @@ const availableFonts = [
     name: "Medium",
     value: Platform.select({
       ios: "Helvetica-Medium",
-      android: "sans-serif-medium", // Police medium Android
+      android: "sans-serif-medium",
       default: "sans-serif",
     }),
   },
 ];
 
-// ✅ Phrases d'inspiration douces
+// Phrases d'inspiration douces
 const inspirationPhrases = [
   "Laisse tes pensées couler comme de l'eau...",
   "Qu'est-ce qui murmure en toi aujourd'hui ?",
@@ -176,6 +178,17 @@ export default function TabOneScreen() {
     formatTime,
   } = useTimer({ playSound });
 
+  // ✅ CORRECTION: Hook pour la modal de nouvelle session
+  const { showNewSessionModal, NewSessionModalComponent } = useNewSessionModal(
+    currentTheme,
+    async () => {
+      const result = await createNewSession();
+      if (result.success) {
+        setTimeout(() => textInputRef.current?.focus(), 100);
+      }
+    }
+  );
+
   // ===============================
   // ÉTATS SIMPLIFIÉS
   // ===============================
@@ -187,7 +200,7 @@ export default function TabOneScreen() {
   const [showFontSizeMenu, setShowFontSizeMenu] = useState(false);
   const [showThemeSelector, setShowThemeSelector] = useState(false);
 
-  // ✅ Nouveaux états pour les fonctionnalités
+  // États pour les fonctionnalités
   const [currentInspiration, setCurrentInspiration] = useState("");
   const { showAlert, AlertModal } = useWebAlert(currentTheme);
 
@@ -262,7 +275,7 @@ export default function TabOneScreen() {
     };
   };
 
-  // ✅ Export d'une entrée (txt ou md + presse-papier)
+  // Export d'une entrée (txt ou md + presse-papier)
   const exportEntry = useCallback(
     async (entry: MurmureEntry) => {
       try {
@@ -282,12 +295,11 @@ export default function TabOneScreen() {
         const filename = `murmure-${year}-${month}-${day}-${hours}h${minutes}`;
         const dateText = `${day}/${month}/${year} à ${hours}:${minutes}`;
 
-        // ✅ Fonction pour télécharger (web uniquement)
+        // Fonction pour télécharger (web uniquement)
         const downloadFile = async () => {
           if (!isWeb()) return;
 
           try {
-
             const blob = new Blob([content], {
               type: "text/plain;charset=utf-8",
             });
@@ -362,7 +374,7 @@ export default function TabOneScreen() {
           }
         };
 
-        // ✅ Fonction pour copier
+        // Fonction pour copier
         const copyToClipboard = async () => {
           try {
             if (isWeb()) {
@@ -387,7 +399,7 @@ export default function TabOneScreen() {
           }
         };
 
-        // ✅ Fonction pour partager (mobile uniquement)
+        // Fonction pour partager (mobile uniquement)
         const shareContent = async () => {
           if (isWeb()) {
             await copyToClipboard();
@@ -408,7 +420,7 @@ export default function TabOneScreen() {
           }
         };
 
-        // ✅ Fonction pour sauvegarder un fichier (mobile uniquement)
+        // Fonction pour sauvegarder un fichier (mobile uniquement)
         const saveFile = async () => {
           if (isWeb()) {
             showAlert(
@@ -449,7 +461,7 @@ export default function TabOneScreen() {
           }
         };
 
-        // ✅ Créer les options avec typage correct
+        // Créer les options avec typage correct
         const menuOptions: {
           text: string;
           icon: string;
@@ -501,7 +513,7 @@ export default function TabOneScreen() {
           style: "cancel",
         });
 
-        // ✅ Afficher la modal améliorée
+        // Afficher la modal améliorée
         showAlert(
           "Exporter votre texte",
           `${wordCount} mots • ${dateText}`,
@@ -527,9 +539,6 @@ export default function TabOneScreen() {
         if (dirInfo.exists) {
           const files = await FileSystem.readDirectoryAsync(murmureDir);
           console.log(`📁 ${files.length} fichiers trouvés dans Murmure/`);
-
-          // Pour l'instant, juste logger. Tu peux implémenter le nettoyage plus tard
-          // si vraiment nécessaire
         }
       } catch (error) {
         const errorMessage =
@@ -539,13 +548,12 @@ export default function TabOneScreen() {
     }
   }, []);
 
-  // 6. Appeler le nettoyage au démarrage (dans un useEffect)
+  // Appeler le nettoyage au démarrage
   useEffect(() => {
-    // Nettoyage des anciens fichiers au démarrage
     cleanupOldFiles();
   }, [cleanupOldFiles]);
 
-  // ✅ Générateur d'inspiration
+  // Générateur d'inspiration
   const getInspiration = useCallback(() => {
     const randomPhrase =
       inspirationPhrases[Math.floor(Math.random() * inspirationPhrases.length)];
@@ -606,35 +614,11 @@ export default function TabOneScreen() {
   // GESTION SESSIONS SIMPLIFIÉE
   // ===============================
 
-  const handleCreateNewSession = useCallback(async () => {
-    const performCreation = async () => {
-      const result = await createNewSession();
-      if (result.success) {
-        setTimeout(() => textInputRef.current?.focus(), 100);
-      }
-    };
-
-    if (text.trim()) {
-      showAlert(
-        "Créer une nouvelle session ?",
-        "Votre travail actuel sera sauvegardé automatiquement.",
-        [
-          {
-            text: "Nouvelle session",
-            style: "default",
-            onPress: performCreation,
-          },
-          {
-            text: "Annuler",
-            style: "cancel",
-            onPress: () => {},
-          },
-        ]
-      );
-    } else {
-      await performCreation();
-    }
-  }, [text, createNewSession, showAlert]);
+  // ✅ CORRECTION: Utiliser la nouvelle modal au lieu de showAlert
+  const handleCreateNewSession = useCallback(() => {
+    const hasUnsavedText = text.trim().length > 0;
+    showNewSessionModal(hasUnsavedText, wordCount);
+  }, [text, wordCount, showNewSessionModal]);
 
   // ===============================
   // GESTION MODE FOCUS SIMPLIFIÉE
@@ -921,7 +905,7 @@ export default function TabOneScreen() {
               </Animated.View>
             )}
 
-            {/* ✅ NOUVEAU: Bouton ✕ flottant en haut à gauche */}
+            {/* Bouton ✕ flottant en haut à gauche */}
             <TouchableOpacity
               style={{
                 position: "absolute",
@@ -934,13 +918,12 @@ export default function TabOneScreen() {
                 justifyContent: "center",
                 alignItems: "center",
                 zIndex: 60,
-                // Ombre subtile pour le faire ressortir
                 shadowColor: "#000",
                 shadowOffset: { width: 0, height: 2 },
                 shadowOpacity: 0.1,
                 shadowRadius: 1,
               }}
-              onPress={showFocusControlsTemporarily} // ✅ CHANGEMENT: showFocusControlsTemporarily au lieu de handleStopTimer
+              onPress={showFocusControlsTemporarily}
               accessibilityLabel="Afficher les contrôles du mode focus"
               accessibilityRole="button"
             >
@@ -956,7 +939,7 @@ export default function TabOneScreen() {
               </Text>
             </TouchableOpacity>
 
-            {/* Timer en haut à droite (inchangé) */}
+            {/* Timer en haut à droite */}
             <View
               style={{
                 position: "absolute",
@@ -1066,7 +1049,7 @@ export default function TabOneScreen() {
               </View>
             </TouchableOpacity>
 
-            {/* Indicateur session en cours en bas (inchangé) */}
+            {/* Indicateur session en cours en bas */}
             <View
               style={{
                 position: "absolute",
@@ -1087,7 +1070,7 @@ export default function TabOneScreen() {
               </Text>
             </View>
 
-            {/* Modal des contrôles (inchangé) */}
+            {/* Modal des contrôles */}
             {showFocusControls && (
               <View
                 style={{
@@ -1208,7 +1191,7 @@ export default function TabOneScreen() {
     );
   }
 
-  // ✅ MODE NORMAL CORRIGÉ
+  // MODE NORMAL
   return (
     <Provider>
       <SafeAreaView
@@ -1225,7 +1208,7 @@ export default function TabOneScreen() {
 
         <View style={commonStyles.layout}>
           <View style={mainPageStyles.mainArea}>
-            {/* ✅ Header corrigé avec structure en 3 colonnes */}
+            {/* Header corrigé avec structure en 3 colonnes */}
             <View>
               {/* Premier header avec les boutons principaux */}
               <View
@@ -1425,9 +1408,8 @@ export default function TabOneScreen() {
                 mainPageStyles.writingContainer,
                 responsiveStyles.responsiveWritingContainer,
                 {
-                  // ✅ NOUVEAU: Augmenter la zone de texte en mode normal
-                  paddingVertical: 5, // ✅ RÉDUIT: pour plus d'espace au texte
-                  paddingHorizontal: 10, // ✅ RÉDUIT: pour plus de largeur
+                  paddingVertical: 5,
+                  paddingHorizontal: 10,
                 },
               ]}
             >
@@ -1436,9 +1418,8 @@ export default function TabOneScreen() {
                   mainPageStyles.paperSheet,
                   responsiveStyles.responsivePaperSheet,
                   {
-                    // ✅ NOUVEAU: Optimiser l'espace du paperSheet
-                    marginBottom: 1, // ✅ RÉDUIT: était 20
-                    padding: 15, // ✅ RÉDUIT: pour maximiser l'espace de texte
+                    marginBottom: 1,
+                    padding: 15,
                   },
                 ]}
               >
@@ -1546,36 +1527,44 @@ export default function TabOneScreen() {
                   {wordCount} mot{wordCount > 1 ? "s" : ""}
                 </Text>
                 {isSaving ? (
-  <View style={{
-    marginLeft: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    backgroundColor: currentTheme.accent,
-    borderRadius: 10,
-    flexDirection: "row",
-    alignItems: "center",
-  }}>
-    <Text style={{ 
-      color: "white", 
-      fontSize: 10,
-      fontWeight: "600"
-    }}>
-      💾 SAVE
-    </Text>
-  </View>) : (
-  // ❌ PROBLÈME: lastSaveTime n'est pas défini
-  lastSaveTime > 0 && (Date.now() - lastSaveTime < 1000) && (
-    <Text style={{ 
-      color: currentTheme.accent, 
-      fontSize: 12, 
-      marginLeft: 8,
-      fontWeight: "500"
-    }}>
-      ✓
-    </Text>
-  )
-)}
-</View>
+                  <View
+                    style={{
+                      marginLeft: 8,
+                      paddingHorizontal: 8,
+                      paddingVertical: 2,
+                      backgroundColor: currentTheme.accent,
+                      borderRadius: 10,
+                      flexDirection: "row",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: "white",
+                        fontSize: 10,
+                        fontWeight: "600",
+                      }}
+                    >
+                      💾 SAVE
+                    </Text>
+                  </View>
+                ) : (
+                  lastSaveTime > 0 &&
+                  Date.now() - lastSaveTime < 1000 && (
+                    <Text
+                      style={{
+                        color: currentTheme.accent,
+                        fontSize: 12,
+                        marginLeft: 8,
+                        fontWeight: "500",
+                      }}
+                    >
+                      ✓
+                    </Text>
+                  )
+                )}
+              </View>
+
               <View style={[mainPageStyles.footerCenter, { flex: 1 }]}>
                 {isTimerRunning && (
                   <Text
@@ -1838,7 +1827,10 @@ export default function TabOneScreen() {
           onToggleDarkMode={toggleDarkMode}
           getThemesList={getThemesList}
         />
+
+        {/* ✅ CORRECTION: Modals ajoutées */}
         <AlertModal />
+        <NewSessionModalComponent />
       </SafeAreaView>
     </Provider>
   );
